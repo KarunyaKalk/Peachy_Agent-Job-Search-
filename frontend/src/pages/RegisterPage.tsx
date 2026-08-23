@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ArrowRight, Lock, Mail, User as UserIcon, AlertCircle } from 'lucide-react';
+import { ArrowRight, Lock, Mail, User as UserIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const [fullName, setFullName] = useState('');
@@ -13,16 +13,38 @@ export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  // Client-Side Validation Rules
+  const hasMinLength = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasDigit = /\d/.test(password);
+  const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(password);
+  const isPasswordValid = hasMinLength && hasUpper && hasLower && hasDigit && hasSpecial;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!isPasswordValid) {
+      setError('Password does not meet required security strength constraints.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       await register(email, password, fullName);
       navigate('/');
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Failed to create account';
+      let msg = 'Failed to create account. Please check your backend connection.';
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === 'string') {
+          msg = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          msg = detail[0].msg || 'Invalid registration payload.';
+        }
+      }
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -69,7 +91,7 @@ export const RegisterPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              Email Address
+              Email Address *
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-dark-muted absolute left-3 top-3" />
@@ -86,7 +108,7 @@ export const RegisterPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              Password
+              Password *
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-dark-muted absolute left-3 top-3" />
@@ -99,11 +121,33 @@ export const RegisterPage: React.FC = () => {
                 className="w-full pl-9 pr-4 py-2.5 bg-dark-bg/80 border border-dark-border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-peach-500 focus:ring-1 focus:ring-peach-500 transition-all"
               />
             </div>
+
+            {/* Password Security Requirement Badges */}
+            <div className="mt-2.5 p-3 rounded-lg bg-dark-bg/60 border border-dark-border/60 text-[11px] space-y-1.5">
+              <p className="font-semibold text-slate-400">Password Security Requirements:</p>
+              <div className="grid grid-cols-2 gap-1 text-dark-muted">
+                <span className={`flex items-center gap-1 ${hasMinLength ? 'text-emerald-400 font-semibold' : ''}`}>
+                  <CheckCircle2 className="w-3 h-3" /> 8+ Characters
+                </span>
+                <span className={`flex items-center gap-1 ${hasUpper ? 'text-emerald-400 font-semibold' : ''}`}>
+                  <CheckCircle2 className="w-3 h-3" /> 1 Uppercase (A-Z)
+                </span>
+                <span className={`flex items-center gap-1 ${hasLower ? 'text-emerald-400 font-semibold' : ''}`}>
+                  <CheckCircle2 className="w-3 h-3" /> 1 Lowercase (a-z)
+                </span>
+                <span className={`flex items-center gap-1 ${hasDigit ? 'text-emerald-400 font-semibold' : ''}`}>
+                  <CheckCircle2 className="w-3 h-3" /> 1 Number (0-9)
+                </span>
+                <span className={`flex items-center gap-1 ${hasSpecial ? 'text-emerald-400 font-semibold' : ''} col-span-2`}>
+                  <CheckCircle2 className="w-3 h-3" /> 1 Special Character (!@#$%...)
+                </span>
+              </div>
+            </div>
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !isPasswordValid}
             className="w-full py-3 px-4 bg-gradient-to-r from-peach-600 to-peach-500 hover:from-peach-500 hover:to-peach-400 text-white font-semibold text-sm rounded-lg shadow-glow-peach flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
           >
             <span>{isSubmitting ? 'Creating account...' : 'Create Account'}</span>
