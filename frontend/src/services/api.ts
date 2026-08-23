@@ -1,17 +1,22 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export const getApiBaseUrl = (): string => {
+  const saved = localStorage.getItem('peachy_api_url');
+  if (saved) return saved;
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+};
 
 export const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: `${getApiBaseUrl()}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to attach JWT token
+// Update baseURL dynamically before each request
 api.interceptors.request.use(
   (config) => {
+    config.baseURL = `${getApiBaseUrl()}/api`;
     const token = localStorage.getItem('peachy_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
