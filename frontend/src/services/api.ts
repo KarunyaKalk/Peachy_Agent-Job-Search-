@@ -3,7 +3,7 @@ import axios from 'axios';
 export const getApiBaseUrl = (): string => {
   const saved = localStorage.getItem('peachy_api_url');
   if (saved) return saved;
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  return import.meta.env.VITE_API_BASE_URL || 'https://peachy-backend-api.onrender.com';
 };
 
 export const api = axios.create({

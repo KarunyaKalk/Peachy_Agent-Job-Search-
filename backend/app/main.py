@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -18,16 +19,16 @@ app = FastAPI(
 def on_startup():
     start_job_scheduler(scan_interval_hours=6)
 
-# CORS middleware setup - supports local dev, localhost, and GitHub Pages
+# Parse CORS_ORIGINS from environment variable or use defaults
+raw_origins = os.getenv(
+    "CORS_ORIGINS",
+    "https://karunyakalk.github.io,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+)
+allowed_origins_list = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "https://karunyakalk.github.io",
-    ],
+    allow_origins=allowed_origins_list,
     allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],

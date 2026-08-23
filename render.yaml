@@ -1,0 +1,56 @@
+services:
+  # 1. FastAPI Web REST API Service
+  - type: web
+    name: peachy-backend-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGINS
+        value: "https://karunyakalk.github.io,http://localhost:5173,http://localhost:3000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: peachy-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: peachy-redis
+          property: connectionString
+
+  # 2. Celery Background Worker Service (Always-On Scraper & Beat)
+  - type: worker
+    name: peachy-celery-worker
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: celery -A app.services.scheduler worker -B --loglevel=info
+    plan: starter
+    region: oregon
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: peachy-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: peachy-redis
+          property: connectionString
+
+databases:
+  # 3. PostgreSQL Database
+  - name: peachy-postgres
+    plan: free
+    region: oregon
+
+services:
+  # 4. Redis Key-Value Store
+  - type: redis
+    name: peachy-redis
+    plan: free
+    region: oregon
