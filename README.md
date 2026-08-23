@@ -1,10 +1,10 @@
-# 🍑 Peachy — AI Job Application Agent
+#  Peachy — AI Job Application Agent
 
 > **An autonomous, human-in-the-loop AI agent that discovers relevant job postings, tailors resumes per job description with zero hallucinations, scores ATS compatibility, and prepares personalized application assets.**
 
 ---
 
-## 🌟 Overview
+##  Overview
 
 **Peachy** is a personal AI job-application assistant built for reliability, security, and real-world usability. Unlike naive auto-apply bots that risk account bans or fabricate qualifications, Peachy operates under strict safety and compliance standards:
 
@@ -14,31 +14,31 @@
 
 ---
 
-## 🚀 Progress & Completed Modules (Days 1–5)
+##  Progress & Completed Modules (Days 1–5)
 
 ```
 Peachy Build Pipeline
-├── Day 1: Project Scaffolding, JWT Auth & App Shell ........ [DONE ✅]
-├── Day 2: Master Profile & Bullet Variants Model .......... [DONE ✅]
-├── Days 3-4: Multi-Source Job Discovery Engine ............. [DONE ✅]
-├── Day 5: Resume Tailoring & Fact-Guard Audit ............ [DONE ✅]
-├── Day 6: PDF Rendering & In-App Resume Editor ............ [UPCOMING ⏳]
-└── Days 7-14: ATS Scoring, Submissions, Email & Prep ...... [UPCOMING ⏳]
+├── Day 1: Project Scaffolding, JWT Auth & App Shell ........ [DONE]
+├── Day 2: Master Profile & Bullet Variants Model .......... [DONE]
+├── Days 3-4: Multi-Source Job Discovery Engine ............. [DONE]
+├── Day 5: Resume Tailoring & Fact-Guard Audit ............ [DONE]
+├── Day 6: PDF Rendering & In-App Resume Editor ............ [UPCOMING]
+└── Days 7-14: ATS Scoring, Submissions, Email & Prep ...... [UPCOMING]
 ```
 
 ### Module Highlights
 
-#### 🔐 Day 1 — Foundation & Authentication
+#### Day 1 — Foundation & Authentication
 - **Full-Stack Architecture**: Python FastAPI backend + React TypeScript Tailwind CSS frontend + Docker Compose orchestration.
 - **Single-User JWT Auth**: Secure signup, login, and bearer token state management.
 - **Modern App Shell**: Responsive sidebar navigation, agent status indicator, human approval guard badge, and theme tokens.
 
-#### 👤 Day 2 — Master Profile & Bullet Variants
+#### Day 2 — Master Profile & Bullet Variants
 - **Structured Resume Database**: Single source of truth for contact details, summary, categorized skills, work history, projects, education, and certifications.
 - **Bullet Variants Engine**: Allows storing alternate phrasing variants for any work experience bullet point to highlight specific focus areas (e.g. *Scale & Performance*, *Backend Emphasis*, *Leadership*).
 - **Job Search Preferences**: Target role titles, seniority toggles, work mode selectors (Remote/Hybrid), salary floor input, and negative keyword auto-exclude filters.
 
-#### 🔍 Days 3–4 — Multi-Source Job Discovery Engine
+#### Days 3–4 — Multi-Source Job Discovery Engine
 - **Adzuna REST API Integration**: Sources structured postings with salary ranges, company names, and direct application links.
 - **Wellfound Playwright Scraper**: Rate-limited startup job scraper with randomized delays (`random.uniform(2.0, 4.5)`) and User-Agent spoofing.
 - **Haveloc Portal Scraper**: Playwright scraper for institution/campus career portals using authenticated user sessions.
@@ -46,7 +46,7 @@ Peachy Build Pipeline
 - **Match Scoring Engine**: Calculates a 0–100 relevance score for every job based on title match, skill overlap, location, and salary floor.
 - **APScheduler Worker**: Runs automated background job discovery across all sources every 6 hours.
 
-#### 📄 Day 5 — Resume Tailoring Engine & Fact-Guard Audit
+#### Day 5 — Resume Tailoring Engine & Fact-Guard Audit
 - **Claude API (Anthropic) Integration**: Engineered prompts sending target JDs + Master Profile + Bullet Variants to `claude-3-5-sonnet-20241022` to rephrase and reorder existing accomplishments without inventing facts.
 - **Fact-Guard Diff Engine**: Automated secondary verification pass comparing tailored output against Master Profile. Marks authentic claims as `verified` (green badge) and flags unverified skills/claims as `flagged` (red alert badge) with explanation text.
 - **Structured Versioning**: Stores structured tailored resume records linked to jobs (`tailored_resumes` table) with versioning (`v1`, `v2`) and approval status.
@@ -54,7 +54,7 @@ Peachy Build Pipeline
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 | Layer | Technology | Usage |
 | :--- | :--- | :--- |
@@ -68,7 +68,7 @@ Peachy Build Pipeline
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 .
@@ -100,7 +100,7 @@ Peachy Build Pipeline
 
 ---
 
-## ⚡ Quickstart Setup Guide
+## Quickstart Setup Guide
 
 ### 1. Environment Setup
 
@@ -130,7 +130,7 @@ Access the applications:
 
 ---
 
-## 🧪 Local Manual Setup (Alternative)
+## Local Manual Setup (Alternative)
 
 ### Backend Setup
 ```bash
@@ -150,6 +150,6 @@ npm run dev
 
 ---
 
-## 🛡️ License
+## License
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+Distributed under the **Apache License 2.0**. See `LICENSE` for more information.
