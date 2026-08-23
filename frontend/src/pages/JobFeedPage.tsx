@@ -23,8 +23,10 @@ import {
   Plus,
 } from 'lucide-react';
 import { TailoredResumeModal } from '../components/Tailoring/TailoredResumeModal';
+import { usePeachyEvents } from '../context/PeachyEventContext';
 
 export const JobFeedPage: React.FC = () => {
+  const { emitNotification } = usePeachyEvents();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -73,6 +75,14 @@ export const JobFeedPage: React.FC = () => {
     try {
       const result = await jobService.triggerScan();
       setScanResult(result);
+      if (result.new_jobs_added > 0) {
+        emitNotification({
+          type: 'job_scan',
+          title: `${result.new_jobs_added} New Jobs Discovered!`,
+          message: `Multi-source scan found ${result.new_jobs_added} matching listings on Adzuna, Wellfound & Haveloc.`,
+          link: '/jobs',
+        });
+      }
       await fetchJobs();
     } catch (err) {
       console.error('Job scan failed:', err);

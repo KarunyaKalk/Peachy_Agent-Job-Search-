@@ -48,3 +48,58 @@
 .pulse-glow {
   animation: pulseGlow 2.5s infinite ease-in-out;
 }
+
+/* Peachy Mascot Keyframe Animations */
+@keyframes peachyBob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes peachyWave {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(26deg);
+  }
+}
+
+@keyframes peachyBounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-10px) scale(1.08) rotate(-4deg);
+  }
+  60% {
+    transform: translateY(-4px) scale(1.04) rotate(4deg);
+  }
+}
+
+.peachy-bob {
+  animation: peachyBob 3.2s ease-in-out infinite;
+}
+
+.peachy-wave {
+  transform-origin: 85% 65%;
+  animation: peachyWave 1.4s ease-in-out infinite;
+}
+
+.peachy-bounce {
+  animation: peachyBounce 1.6s infinite ease-in-out;
+}
+
+/* Accessibility: Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .peachy-bob,
+  .peachy-wave,
+  .peachy-bounce,
+  .pulse-glow {
+    animation: none !important;
+    transform: none !important;
+  }
+}

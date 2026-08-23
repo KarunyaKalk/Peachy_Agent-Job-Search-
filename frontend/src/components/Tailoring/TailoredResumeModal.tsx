@@ -17,12 +17,15 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
+import { usePeachyEvents } from '../../context/PeachyEventContext';
+
 interface Props {
   job: Job;
   onClose: () => void;
 }
 
 export const TailoredResumeModal: React.FC<Props> = ({ job, onClose }) => {
+  const { emitNotification } = usePeachyEvents();
   const [tailoredResume, setTailoredResume] = useState<TailoredResume | null>(null);
   const [loading, setLoading] = useState(true);
   const [stepText, setStepText] = useState('Analyzing target job description...');
@@ -45,6 +48,13 @@ export const TailoredResumeModal: React.FC<Props> = ({ job, onClose }) => {
         if (isMounted) {
           setTailoredResume(data);
           setApproved(data.status === 'approved');
+
+          emitNotification({
+            type: 'resume_tailored',
+            title: `Resume Tailored for ${job.company}`,
+            message: `Generated ATS-aligned resume version #${data.version_number} with Fact-Guard verification.`,
+            link: '/jobs',
+          });
         }
       } catch (err) {
         console.error('Failed to generate tailored resume:', err);
