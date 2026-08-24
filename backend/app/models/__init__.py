@@ -14,6 +14,9 @@ from app.models.profile import (
 
 from app.models.job import JobSeen
 from app.models.tailored_resume import TailoredResume
+from app.models.application import Application
+from app.models.cold_email import ColdEmailDraft
+from app.models.outreach import Outreach
 
 __all__ = [
     "Base",
@@ -29,4 +32,7 @@ __all__ = [
     "JobPreferences",
     "JobSeen",
     "TailoredResume",
+    "Application",
+    "ColdEmailDraft",
+    "Outreach",
 ]

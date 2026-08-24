@@ -226,20 +226,42 @@ export const mockApiEngine = {
   },
 
   generateTailoredResume: (jobId: number): TailoredResume => {
+    const STORAGE_KEY_RESUMES = 'peachy_mock_resumes_v1';
+    let savedResumes: TailoredResume[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_RESUMES);
+      if (raw) savedResumes = JSON.parse(raw);
+    } catch {}
+
+    const jobResumes = savedResumes.filter((r) => r.job_id === jobId);
     const jobs = mockApiEngine.getJobs();
     const targetJob = jobs.find((j) => j.id === jobId) || jobs[0];
+
+    const nextVersion = jobResumes.length > 0 ? Math.max(...jobResumes.map((r) => r.version_number)) + 1 : 1;
+
+    const profile = mockApiEngine.getProfile();
 
     const tailored: TailoredResume = {
       id: Date.now(),
       user_id: 1,
       job_id: jobId,
-      version_number: 1,
+      version_number: nextVersion,
       summary: `Results-oriented Senior Engineer tailored specifically for ${targetJob.company}, emphasizing clean API contracts and cloud infrastructure.`,
       tailored_json: {
+        contact: {
+          name: 'Karunya Kalkhundiya',
+          phone: profile.phone || '+1 (555) 234-5678',
+          location: profile.location || 'San Francisco, CA',
+          email: 'karunya@example.com',
+          linkedin_url: profile.linkedin_url || 'https://linkedin.com/in/karunya',
+          github_url: profile.github_url || 'https://github.com/KarunyaKalk',
+          portfolio_url: profile.portfolio_url || 'https://karunyakalk.dev',
+        },
         summary: `Results-oriented Senior Engineer tailored specifically for ${targetJob.company}, emphasizing clean API contracts and cloud infrastructure.`,
         skills: ['Python', 'TypeScript', 'React', 'FastAPI', 'PostgreSQL', 'Docker', 'Redis'],
         experiences: [
           {
+            id: 1,
             company: targetJob.company,
             role: targetJob.title,
             location: 'Remote',
@@ -247,9 +269,38 @@ export const mockApiEngine = {
             end_date: 'Present',
             bullets: [
               'Spearheaded WebSocket/Redis pub-sub migration for sub-50ms real-time event streaming across 100k active clients.',
+              'Designed scalable backend microservices and RESTful API endpoints for multi-tenant applications.',
             ],
           },
         ],
+        projects: [
+          {
+            id: 101,
+            title: 'Peachy AI Agent System',
+            tech_stack: 'Python, FastAPI, WeasyPrint, React, TypeScript',
+            start_date: '2024-01',
+            end_date: 'Present',
+            description: 'Automated ATS job search & resume tailoring agent with zero hallucinated claims.',
+            bullets: ['Implemented WeasyPrint ATS PDF renderer with versioned history control.'],
+          },
+        ],
+        education: [
+          {
+            id: 201,
+            institution: 'University of California, Berkeley',
+            degree: 'Bachelor of Science',
+            field_of_study: 'Computer Science',
+            graduation_date: '2021',
+            gpa: '3.9 / 4.0',
+          },
+        ],
+        visibility: {
+          summary: true,
+          skills: true,
+          experiences: true,
+          projects: true,
+          education: true,
+        },
       },
       fact_guard_flags: [
         {
@@ -270,6 +321,614 @@ export const mockApiEngine = {
       updated_at: new Date().toISOString(),
     };
 
+    savedResumes.unshift(tailored);
+    localStorage.setItem(STORAGE_KEY_RESUMES, JSON.stringify(savedResumes));
     return tailored;
   },
+
+  getResumeVersions: (jobId: number): TailoredResume[] => {
+    const STORAGE_KEY_RESUMES = 'peachy_mock_resumes_v1';
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_RESUMES);
+      if (raw) {
+        const list: TailoredResume[] = JSON.parse(raw);
+        const filtered = list.filter((r) => r.job_id === jobId).sort((a, b) => b.version_number - a.version_number);
+        if (filtered.length > 0) return filtered;
+      }
+    } catch {}
+    const initial = mockApiEngine.generateTailoredResume(jobId);
+    return [initial];
+  },
+
+  getResumeVersion: (versionId: number): TailoredResume => {
+    const STORAGE_KEY_RESUMES = 'peachy_mock_resumes_v1';
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_RESUMES);
+      if (raw) {
+        const list: TailoredResume[] = JSON.parse(raw);
+        const found = list.find((r) => r.id === versionId);
+        if (found) return found;
+      }
+    } catch {}
+    return mockApiEngine.generateTailoredResume(1);
+  },
+
+  updateTailoredResumeMock: (
+    resumeId: number,
+    data: { summary?: string; tailored_json?: any; status?: any }
+  ): TailoredResume => {
+    const STORAGE_KEY_RESUMES = 'peachy_mock_resumes_v1';
+    let list: TailoredResume[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_RESUMES);
+      if (raw) list = JSON.parse(raw);
+    } catch {}
+
+    const index = list.findIndex((r) => r.id === resumeId);
+    if (index !== -1) {
+      if (data.summary !== undefined) list[index].summary = data.summary;
+      if (data.tailored_json !== undefined) list[index].tailored_json = data.tailored_json;
+      if (data.status !== undefined) list[index].status = data.status;
+      list[index].updated_at = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY_RESUMES, JSON.stringify(list));
+      return list[index];
+    }
+
+    const created = mockApiEngine.generateTailoredResume(1);
+    if (data.status) created.status = data.status;
+    if (data.summary) created.summary = data.summary;
+    return created;
+  },
+
+  getReviewQueue: (): any[] => {
+
+    const STORAGE_KEY_RESUMES = 'peachy_mock_resumes_v1';
+    const STORAGE_KEY_APPS = 'peachy_mock_apps_v1';
+    
+    let resumes: TailoredResume[] = [];
+    try {
+      const rawResumes = localStorage.getItem(STORAGE_KEY_RESUMES);
+      if (rawResumes) resumes = JSON.parse(rawResumes);
+    } catch {}
+
+    if (resumes.length === 0) {
+      const initial1 = mockApiEngine.generateTailoredResume(1);
+      const initial2 = mockApiEngine.generateTailoredResume(2);
+      resumes = [initial1, initial2];
+    }
+
+    let apps: any[] = [];
+    try {
+      const rawApps = localStorage.getItem(STORAGE_KEY_APPS);
+      if (rawApps) apps = JSON.parse(rawApps);
+    } catch {}
+
+    const jobs = mockApiEngine.getJobs();
+
+    const queueItems: any[] = [];
+    const processedJobIds = new Set(apps.map((a) => a.job_id));
+
+    for (const res of resumes) {
+      if (processedJobIds.has(res.job_id) || res.status === 'rejected') continue;
+      
+      const job = jobs.find((j) => j.id === res.job_id) || jobs[0];
+      processedJobIds.add(res.job_id);
+
+      queueItems.push({
+        job,
+        tailored_resume: res,
+        ats_breakdown: {
+          keyword_alignment_score: Math.min(99, job.relevance_score),
+          fact_guard_verified_claims: res.fact_guard_flags?.filter((f) => f.status === 'verified').length || 3,
+          fact_guard_flagged_claims: res.fact_guard_flags?.filter((f) => f.status === 'flagged').length || 0,
+          skills_coverage_score: 95,
+        },
+        status: 'pending_review',
+      });
+    }
+
+    return queueItems;
+  },
+
+  approveApplicationMock: (jobId: number, notes?: string): any => {
+    const STORAGE_KEY_APPS = 'peachy_mock_apps_v1';
+    let apps: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_APPS);
+      if (raw) apps = JSON.parse(raw);
+    } catch {}
+
+    const jobs = mockApiEngine.getJobs();
+    const job = jobs.find((j) => j.id === jobId) || jobs[0];
+    const resume = mockApiEngine.getResumeVersions(jobId)[0];
+
+    const index = apps.findIndex((a) => a.job_id === jobId);
+    const updatedApp = {
+      id: index !== -1 ? apps[index].id : Date.now(),
+      user_id: 1,
+      job_id: jobId,
+      resume_id: resume.id,
+      resume_version: resume.version_number,
+      status: 'Ready to Apply',
+      notes: notes || `Approved tailored resume v${resume.version_number}.`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      job,
+      resume,
+    };
+
+    if (index !== -1) {
+      apps[index] = updatedApp;
+    } else {
+      apps.unshift(updatedApp);
+    }
+
+    localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
+    return updatedApp;
+  },
+
+  rejectApplicationMock: (jobId: number, notes?: string): any => {
+    const STORAGE_KEY_APPS = 'peachy_mock_apps_v1';
+    let apps: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_APPS);
+      if (raw) apps = JSON.parse(raw);
+    } catch {}
+
+    const jobs = mockApiEngine.getJobs();
+    const job = jobs.find((j) => j.id === jobId) || jobs[0];
+    const resume = mockApiEngine.getResumeVersions(jobId)[0];
+
+    const updatedApp = {
+      id: Date.now(),
+      user_id: 1,
+      job_id: jobId,
+      resume_id: resume.id,
+      resume_version: resume.version_number,
+      status: 'Rejected',
+      notes: notes || 'Rejected during review queue evaluation.',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      job,
+      resume,
+    };
+
+    apps.unshift(updatedApp);
+    localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
+    return updatedApp;
+  },
+
+  getApplicationsMock: (statusFilter?: string): any[] => {
+    const STORAGE_KEY_APPS = 'peachy_mock_apps_v1';
+    let apps: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_APPS);
+      if (raw) apps = JSON.parse(raw);
+    } catch {}
+
+    if (apps.length === 0) {
+      // Seed default applications if empty
+      const job1 = mockApiEngine.getJobs()[0];
+      const res1 = mockApiEngine.getResumeVersions(job1.id)[0];
+      apps = [
+        {
+          id: 1001,
+          user_id: 1,
+          job_id: job1.id,
+          resume_id: res1.id,
+          resume_version: res1.version_number,
+          status: 'Ready to Apply',
+          notes: 'Tailored resume finalized. Waiting for automated Playwright submission.',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          job: job1,
+          resume: res1,
+        },
+      ];
+      localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
+    }
+
+    if (statusFilter && statusFilter.toLowerCase() !== 'all') {
+      return apps.filter((a) => a.status.toLowerCase() === statusFilter.toLowerCase());
+    }
+
+    return apps;
+  },
+
+  updateApplicationMock: (id: number, data: { status?: string; notes?: string }): any => {
+    const STORAGE_KEY_APPS = 'peachy_mock_apps_v1';
+    let apps: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_APPS);
+      if (raw) apps = JSON.parse(raw);
+    } catch {}
+
+    const index = apps.findIndex((a) => a.id === id);
+    if (index !== -1) {
+      if (data.status) apps[index].status = data.status;
+      if (data.notes !== undefined) apps[index].notes = data.notes;
+      apps[index].updated_at = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
+      return apps[index];
+    }
+    return null;
+  },
+
+  submitApplicationMock: (id: number): any => {
+    const STORAGE_KEY_APPS = 'peachy_mock_apps_v1';
+    let apps: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_APPS);
+      if (raw) apps = JSON.parse(raw);
+    } catch {}
+
+    const index = apps.findIndex((a) => a.id === id);
+    if (index === -1) return null;
+
+    const app = apps[index];
+    const job = app.job || mockApiEngine.getJobs().find((j) => j.id === app.job_id);
+    const platform = (job?.source_platform || '').toLowerCase();
+
+    const timestamp = new Date().toISOString();
+
+    if (platform.includes('adzuna')) {
+      // Direct API Submission
+      app.status = 'Applied';
+      app.submission_type = 'direct_api';
+      app.applied_at = timestamp;
+      app.attempt_log = [
+        ...(app.attempt_log || []),
+        {
+          timestamp,
+          status: 'Applied',
+          message: `Direct API submission executed for ${job?.company || 'Employer'}.`,
+          resume_version: app.resume_version,
+        },
+      ];
+      apps[index] = app;
+      localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
+
+      return {
+        status: 'applied',
+        submission_type: 'direct_api',
+        message: `Direct submission completed for ${job?.company}.`,
+        application: app,
+      };
+    } else {
+      // Form-fill with Playwright Hard Pause
+      const svgPreview = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" style="background:#0f172a; font-family:sans-serif;">
+          <rect x="20" y="20" width="560" height="340" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+          <text x="40" y="60" fill="#38bdf8" font-size="18" font-weight="bold">Pre-Filled Form: ${job?.title} @ ${job?.company}</text>
+          <rect x="420" y="38" width="140" height="24" rx="4" fill="#f59e0b"/>
+          <text x="430" y="54" fill="#000" font-size="10" font-weight="bold">PAUSED BEFORE SUBMIT</text>
+          <text x="40" y="110" fill="#94a3b8" font-size="12">NAME: Karunya Kalkhundiya</text>
+          <text x="40" y="135" fill="#94a3b8" font-size="12">EMAIL: karunya@example.com</text>
+          <text x="40" y="160" fill="#94a3b8" font-size="12">RESUME: Resume_${(job?.company || 'Company').replace(/\s+/g, '_')}_v${app.resume_version}.pdf</text>
+          <rect x="40" y="190" width="520" height="45" rx="6" fill="#0284c7"/>
+          <text x="60" y="218" fill="#fff" font-size="13" font-weight="bold">✓ ATS PDF Resume Attached & Form Pre-filled by Playwright</text>
+          <rect x="40" y="260" width="520" height="40" rx="6" fill="#22c55e" opacity="0.7"/>
+          <text x="170" y="285" fill="#fff" font-size="14" font-weight="bold">HARD PAUSE: CLICK CONFIRM TO SUBMIT</text>
+        </svg>
+      `;
+
+      const screenshotBase64 = 'data:image/svg+xml;base64,' + btoa(svgPreview);
+
+      app.submission_type = 'form_fill';
+      app.prefill_screenshot = screenshotBase64;
+      app.attempt_log = [
+        ...(app.attempt_log || []),
+        {
+          timestamp,
+          status: 'Ready to Apply',
+          message: `Playwright pre-filled application form for ${job?.company}. Hard pause active awaiting user confirmation.`,
+          resume_version: app.resume_version,
+        },
+      ];
+      apps[index] = app;
+      localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
+
+      return {
+        status: 'pending_confirmation',
+        submission_type: 'form_fill',
+        prefill_screenshot: screenshotBase64,
+        message: `Playwright pre-filled application form for ${job?.company}. Confirmation required.`,
+        application: app,
+      };
+    }
+  },
+
+  confirmSubmissionMock: (id: number): any => {
+    const STORAGE_KEY_APPS = 'peachy_mock_apps_v1';
+    let apps: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_APPS);
+      if (raw) apps = JSON.parse(raw);
+    } catch {}
+
+    const index = apps.findIndex((a) => a.id === id);
+    if (index === -1) return null;
+
+    const app = apps[index];
+    const job = app.job || mockApiEngine.getJobs().find((j) => j.id === app.job_id);
+    const timestamp = new Date().toISOString();
+
+    app.status = 'Applied';
+    app.applied_at = timestamp;
+    app.attempt_log = [
+      ...(app.attempt_log || []),
+      {
+        timestamp,
+        status: 'Applied',
+        message: `Confirmed and submitted application for ${job?.company || 'Employer'} following user authorization.`,
+        resume_version: app.resume_version,
+      },
+    ];
+
+    apps[index] = app;
+    localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
+
+    return {
+      status: 'applied',
+      submission_type: app.submission_type || 'form_fill',
+      prefill_screenshot: app.prefill_screenshot,
+      message: `Application for ${job?.company} submitted successfully!`,
+      application: app,
+    };
+  },
+
+  getKanbanBoardMock: (): Record<string, any[]> => {
+    const apps = mockApiEngine.getApplicationsMock();
+    const kanban: Record<string, any[]> = {
+      'Ready to Apply': [],
+      'Applied': [],
+      'Under Review': [],
+      'Interview': [],
+      'Offer': [],
+      'Rejected': [],
+    };
+
+    for (const app of apps) {
+      const key = kanban[app.status] ? app.status : 'Ready to Apply';
+      kanban[key].push(app);
+    }
+
+    return kanban;
+  },
+
+  findContactsMock: (jobId: number): any[] => {
+    const jobs = mockApiEngine.getJobs();
+    const job = jobs.find((j) => j.id === jobId) || jobs[0];
+    const cleanComp = job.company.trim();
+    const domain = `${cleanComp.toLowerCase().replace(/\s+/g, '')}.com`;
+
+
+    return [
+      {
+        name: 'Alex Rivera',
+        title: `Head of Engineering @ ${cleanComp}`,
+        email: `arivera@${domain}`,
+        confidence_score: 95,
+        domain: domain,
+        source: 'Hunter.io Verified Domain Search',
+      },
+      {
+        name: 'Sarah Chen',
+        title: `Senior Technical Recruiting Lead @ ${cleanComp}`,
+        email: `sarah.chen@${domain}`,
+        confidence_score: 92,
+        domain: domain,
+        source: 'Hunter.io Verified Domain Search',
+      },
+      {
+        name: 'David Vance',
+        title: `VP of Technology @ ${cleanComp}`,
+        email: `dvance@${domain}`,
+        confidence_score: 88,
+        domain: domain,
+        source: 'Hunter.io Pattern Search',
+      },
+    ];
+  },
+
+  generateColdEmailMock: (payload: {
+    job_id: number;
+    contact_name: string;
+    contact_title?: string;
+    contact_email?: string;
+    confidence_score?: number;
+  }): any => {
+    const STORAGE_KEY_OUTREACH = 'peachy_mock_outreach_v1';
+    let drafts: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_OUTREACH);
+      if (raw) drafts = JSON.parse(raw);
+    } catch {}
+
+    const jobs = mockApiEngine.getJobs();
+    const job = jobs.find((j) => j.id === payload.job_id) || jobs[0];
+    const firstName = payload.contact_name.split(' ')[0] || 'Hiring Manager';
+
+    const subject = `${job.title} position — Karunya Kalkhundiya x ${job.company}`;
+    const body = `Hi ${firstName},
+
+I hope this week is treating you well! I saw that ${job.company} is expanding engineering efforts for the ${job.title} position. Given your leadership as ${payload.contact_title || 'Hiring Manager'}, I wanted to reach out directly.
+
+I'm a Senior Full Stack & AI Engineer specializing in high-performance cloud microservices and real-time event distribution. A few quick highlights:
+
+• Architected WebSocket & Redis pub-sub event distribution pipeline handling over 100k active clients with sub-50ms latency.
+• Optimized database queries and API microservices to improve overall system throughput.
+
+I've put together a tailored ATS resume specifically aligned with ${job.company}'s engineering stack. Would you have 10 minutes next Tuesday for a brief chat or code sample preview?
+
+Best regards,
+
+Karunya Kalkhundiya
+github.com/KarunyaKalk | karunyakalk.dev`;
+
+    const draft = {
+      id: Date.now(),
+      user_id: 1,
+      job_id: payload.job_id,
+      contact_name: payload.contact_name,
+      contact_title: payload.contact_title || 'Hiring Manager',
+      contact_email: payload.contact_email || `contact@${job.company.toLowerCase()}.com`,
+      confidence_score: payload.confidence_score || 92,
+      subject,
+      body,
+      status: 'draft',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      job,
+    };
+
+    drafts.unshift(draft);
+    localStorage.setItem(STORAGE_KEY_OUTREACH, JSON.stringify(drafts));
+    return draft;
+  },
+
+  getColdEmailDraftsMock: (jobId?: number): any[] => {
+    const STORAGE_KEY_OUTREACH = 'peachy_mock_outreach_v1';
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_OUTREACH);
+      if (raw) {
+        const list: any[] = JSON.parse(raw);
+        if (jobId) return list.filter((d) => d.job_id === jobId);
+        return list;
+      }
+    } catch {}
+    return [];
+  },
+
+  updateColdEmailDraftMock: (draftId: number, payload: { subject?: string; body?: string; status?: string }): any => {
+    const STORAGE_KEY_OUTREACH = 'peachy_mock_outreach_v1';
+    let drafts: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_OUTREACH);
+      if (raw) drafts = JSON.parse(raw);
+    } catch {}
+
+    const index = drafts.findIndex((d) => d.id === draftId);
+    if (index !== -1) {
+      if (payload.subject !== undefined) drafts[index].subject = payload.subject;
+      if (payload.body !== undefined) drafts[index].body = payload.body;
+      if (payload.status !== undefined) drafts[index].status = payload.status;
+      drafts[index].updated_at = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY_OUTREACH, JSON.stringify(drafts));
+      return drafts[index];
+    }
+    return null;
+  },
+
+  sendColdEmailMock: (draftId: number): any => {
+    const STORAGE_KEY_OUTREACH = 'peachy_mock_outreach_v1';
+    const STORAGE_KEY_LOG = 'peachy_mock_outreach_log_v1';
+
+    let drafts: any[] = [];
+    let logs: any[] = [];
+    try {
+      const rawD = localStorage.getItem(STORAGE_KEY_OUTREACH);
+      if (rawD) drafts = JSON.parse(rawD);
+      const rawL = localStorage.getItem(STORAGE_KEY_LOG);
+      if (rawL) logs = JSON.parse(rawL);
+    } catch {}
+
+    const draftIndex = drafts.findIndex((d) => d.id === draftId);
+    if (draftIndex === -1) return null;
+
+    const draft = drafts[draftIndex];
+
+    // Calculate sent today
+    const todayStr = new Date().toISOString().split('T')[0];
+    const sentToday = logs.filter((l) => l.sent_at && l.sent_at.startsWith(todayStr)).length;
+
+    if (sentToday >= 15) {
+      throw new Error('Daily send cap reached (15/15). Sending paused until tomorrow.');
+    }
+
+    const optOutFooter = "\n\n---\nIf you prefer not to receive further emails regarding engineering roles, please reply 'unsubscribe'.";
+    let fullBody = draft.body ? draft.body.trim() : '';
+    if (!fullBody.toLowerCase().includes("reply 'unsubscribe'")) {
+      fullBody += optOutFooter;
+    }
+
+    const record = {
+      id: Date.now(),
+      user_id: 1,
+      job_id: draft.job_id,
+      draft_id: draft.id,
+      recipient_name: draft.contact_name,
+      recipient_email: draft.contact_email || `contact@${(draft.job?.company || 'company').toLowerCase()}.com`,
+      subject: draft.subject,
+      body: fullBody,
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      job: draft.job,
+    };
+
+    logs.unshift(record);
+    localStorage.setItem(STORAGE_KEY_LOG, JSON.stringify(logs));
+
+    drafts[draftIndex].status = 'sent';
+    drafts[draftIndex].body = fullBody;
+    localStorage.setItem(STORAGE_KEY_OUTREACH, JSON.stringify(drafts));
+
+    return record;
+  },
+
+
+  getDailyQuotaMock: (): { sent_today: number; daily_cap: number; remaining: number } => {
+    const STORAGE_KEY_LOG = 'peachy_mock_outreach_log_v1';
+    let logs: any[] = [];
+    try {
+      const rawL = localStorage.getItem(STORAGE_KEY_LOG);
+      if (rawL) logs = JSON.parse(rawL);
+    } catch {}
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const sentToday = logs.filter((l) => l.sent_at && l.sent_at.startsWith(todayStr)).length;
+    const dailyCap = 15;
+
+    return {
+      sent_today: sentToday,
+      daily_cap: dailyCap,
+      remaining: Math.max(0, dailyCap - sentToday),
+    };
+  },
+
+  getOutreachLogMock: (jobId?: number): any[] => {
+    const STORAGE_KEY_LOG = 'peachy_mock_outreach_log_v1';
+    try {
+      const rawL = localStorage.getItem(STORAGE_KEY_LOG);
+      if (rawL) {
+        const list: any[] = JSON.parse(rawL);
+        if (jobId) return list.filter((l) => l.job_id === jobId);
+        return list;
+      }
+    } catch {}
+
+    // Seed default sample log if empty
+    const jobs = mockApiEngine.getJobs();
+    const defaultLog = [
+      {
+        id: 901,
+        user_id: 1,
+        job_id: jobs[0].id,
+        draft_id: 801,
+        recipient_name: 'Alex Rivera',
+        recipient_email: 'arivera@adzuna.com',
+        subject: 'Senior Full Stack Engineer position — Karunya Kalkhundiya x Adzuna',
+        body: `Hi Alex,\n\nI hope this week is treating you well! Given your leadership as Head of Engineering, I wanted to reach out directly regarding the Senior Full Stack role at Adzuna.\n\nI'm a Senior Engineer specializing in high-performance full-stack systems and cloud microservices.\n\nWould you have 10 minutes next Tuesday for a brief chat?\n\n---\nIf you prefer not to receive further emails regarding engineering roles, please reply 'unsubscribe'.`,
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        job: jobs[0],
+      },
+    ];
+
+    localStorage.setItem(STORAGE_KEY_LOG, JSON.stringify(defaultLog));
+    if (jobId) return defaultLog.filter((l) => l.job_id === jobId);
+    return defaultLog;
+  },
 };
+
+

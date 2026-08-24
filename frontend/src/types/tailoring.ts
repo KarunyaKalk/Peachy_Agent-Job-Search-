@@ -5,7 +5,18 @@ export interface FactGuardFlag {
   reason: string;
 }
 
+export interface ContactInfo {
+  name?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  linkedin_url?: string;
+  github_url?: string;
+  portfolio_url?: string;
+}
+
 export interface TailoredExperience {
+  id?: number;
   company: string;
   role: string;
   location?: string;
@@ -14,10 +25,51 @@ export interface TailoredExperience {
   bullets: string[];
 }
 
+export interface TailoredProject {
+  id?: number;
+  title: string;
+  description?: string;
+  tech_stack?: string;
+  start_date?: string;
+  end_date?: string;
+  bullets?: string[];
+}
+
+export interface TailoredEducation {
+  id?: number;
+  institution: string;
+  degree: string;
+  field_of_study?: string;
+  graduation_date?: string;
+  gpa?: string;
+  honors?: string;
+}
+
+export interface TailoredCertification {
+  id?: number;
+  name: string;
+  issuer?: string;
+  issue_date?: string;
+}
+
+export interface SectionVisibility {
+  summary: boolean;
+  skills: boolean;
+  experiences: boolean;
+  projects: boolean;
+  education: boolean;
+  certifications?: boolean;
+}
+
 export interface TailoredJson {
+  contact?: ContactInfo;
   summary: string;
   skills: string[];
   experiences: TailoredExperience[];
+  projects?: TailoredProject[];
+  education?: TailoredEducation[];
+  certifications?: TailoredCertification[];
+  visibility?: SectionVisibility;
 }
 
 export interface TailoredResume {
@@ -28,7 +80,7 @@ export interface TailoredResume {
   summary?: string;
   tailored_json: TailoredJson;
   fact_guard_flags: FactGuardFlag[];
-  status: 'draft' | 'approved' | 'rejected';
+  status: 'draft' | 'approved' | 'finalized' | 'rejected';
   created_at: string;
   updated_at: string;
 }

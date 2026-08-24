@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ contact.name or "Resume" }} - {{ job_title or "Tailored Resume" }}</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.5in 0.6in 0.5in 0.6in;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111111;
+      line-height: 1.4;
+      font-size: 10.5pt;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Heading 1: Candidate Name */
+    h1 {
+      font-size: 20pt;
+      font-weight: bold;
+      text-align: center;
+      text-transform: uppercase;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.5px;
+      color: #000000;
+    }
+
+    /* Contact Header Paragraph */
+    .contact-info {
+      text-align: center;
+      font-size: 9.5pt;
+      color: #333333;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1.5pt solid #222222;
+    }
+
+    .contact-info span {
+      display: inline;
+    }
+
+    .contact-info span:not(:last-child)::after {
+      content: " • ";
+      font-weight: bold;
+      color: #555555;
+    }
+
+    /* Heading 2: Major Section Headers */
+    h2 {
+      font-size: 11.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 14px 0 6px 0;
+      padding-bottom: 2px;
+      border-bottom: 1pt solid #444444;
+      color: #000000;
+    }
+
+    /* Summary Paragraph */
+    .summary-text {
+      margin: 0 0 10px 0;
+      text-align: justify;
+      color: #222222;
+    }
+
+    /* Heading 3: Role / Degree / Project Titles */
+    h3 {
+      font-size: 10.5pt;
+      font-weight: bold;
+      margin: 8px 0 2px 0;
+      color: #000000;
+    }
+
+    .entry-header {
+      margin-top: 8px;
+      margin-bottom: 2px;
+    }
+
+    .entry-title {
+      font-weight: bold;
+      font-size: 10.5pt;
+      color: #000000;
+    }
+
+    .entry-company {
+      font-weight: bold;
+      color: #222222;
+    }
+
+    .entry-meta {
+      float: right;
+      font-weight: normal;
+      font-size: 9.5pt;
+      color: #444444;
+    }
+
+    .entry-location {
+      font-style: italic;
+      font-size: 9.5pt;
+      color: #555555;
+    }
+
+    .clearfix::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+
+    /* Bullet Lists */
+    ul {
+      margin: 3px 0 8px 0;
+      padding-left: 18px;
+    }
+
+    li {
+      margin-bottom: 3px;
+      color: #222222;
+      text-align: left;
+    }
+
+    /* Skill Lists */
+    .skills-category {
+      margin-bottom: 4px;
+    }
+
+    .skills-category-title {
+      font-weight: bold;
+      color: #000000;
+    }
+
+    .skills-list {
+      color: #222222;
+    }
+
+    /* Project & Education Items */
+    .item-block {
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ATS Header: Candidate Name & Contact Details -->
+  <h1>{{ contact.name or "CANDIDATE NAME" }}</h1>
+  
+  <div class="contact-info">
+    {% if contact.location %}<span>{{ contact.location }}</span>{% endif %}
+    {% if contact.phone %}<span>{{ contact.phone }}</span>{% endif %}
+    {% if contact.email %}<span>{{ contact.email }}</span>{% endif %}
+    {% if contact.linkedin_url %}<span>{{ contact.linkedin_url }}</span>{% endif %}
+    {% if contact.github_url %}<span>{{ contact.github_url }}</span>{% endif %}
+    {% if contact.portfolio_url %}<span>{{ contact.portfolio_url }}</span>{% endif %}
+  </div>
+
+  <!-- Professional Summary Section -->
+  {% if visibility.summary and summary %}
+  <h2>Professional Summary</h2>
+  <p class="summary-text">{{ summary }}</p>
+  {% endif %}
+
+  <!-- Technical Skills Section -->
+  {% if visibility.skills and skills and skills|length > 0 %}
+  <h2>Technical Skills</h2>
+  <div class="skills-category">
+    <span class="skills-list">
+      {% if skills is mapping %}
+        {% for cat, list in skills.items() %}
+          <strong>{{ cat }}:</strong> {{ list|join(', ') }}{% if not loop.last %} | {% endif %}
+        {% endfor %}
+      {% else %}
+        {{ skills|join(' • ') }}
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  <!-- Professional Work Experience Section -->
+  {% if visibility.experiences and experiences and experiences|length > 0 %}
+  <h2>Professional Experience</h2>
+  {% for exp in experiences %}
+  <div class="item-block">
+    <div class="entry-header clearfix">
+      <span class="entry-meta">{{ exp.start_date }}{% if exp.end_date %} – {{ exp.end_date }}{% endif %}</span>
+      <span class="entry-title">{{ exp.role }}</span> — <span class="entry-company">{{ exp.company }}</span>
+      {% if exp.location %}<span class="entry-location">({{ exp.location }})</span>{% endif %}
+    </div>
+    
+    {% if exp.bullets and exp.bullets|length > 0 %}
+    <ul>
+      {% for bullet in exp.bullets %}
+        {% if bullet is mapping %}
+          {% if bullet.active != false %}
+            <li>{{ bullet.text or bullet.content }}</li>
+          {% endif %}
+        {% else %}
+          <li>{{ bullet }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Key Projects Section -->
+  {% if visibility.projects and projects and projects|length > 0 %}
+  <h2>Projects</h2>
+  {% for proj in projects %}
+  <div class="item-block">
+    <div class="entry-header clearfix">
+      {% if proj.start_date %}<span class="entry-meta">{{ proj.start_date }}{% if proj.end_date %} – {{ proj.end_date }}{% endif %}</span>{% endif %}
+      <span class="entry-title">{{ proj.title }}</span>
+      {% if proj.tech_stack %} — <span class="skills-list"><em>Tech Stack: {{ proj.tech_stack }}</em></span>{% endif %}
+    </div>
+    {% if proj.description %}
+    <p class="summary-text" style="margin-top: 2px; margin-bottom: 3px;">{{ proj.description }}</p>
+    {% endif %}
+    {% if proj.bullets and proj.bullets|length > 0 %}
+    <ul>
+      {% for bullet in proj.bullets %}
+        {% if bullet is mapping %}
+          {% if bullet.active != false %}
+            <li>{{ bullet.text or bullet.content }}</li>
+          {% endif %}
+        {% else %}
+          <li>{{ bullet }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Education Section -->
+  {% if visibility.education and education and education|length > 0 %}
+  <h2>Education</h2>
+  {% for edu in education %}
+  <div class="item-block">
+    <div class="entry-header clearfix">
+      {% if edu.graduation_date %}<span class="entry-meta">{{ edu.graduation_date }}</span>{% endif %}
+      <span class="entry-title">{{ edu.degree }}{% if edu.field_of_study %} in {{ edu.field_of_study }}{% endif %}</span> — <span class="entry-company">{{ edu.institution }}</span>
+    </div>
+    {% if edu.gpa or edu.honors %}
+    <div style="font-size: 9.5pt; color: #333333; margin-top: 1px;">
+      {% if edu.gpa %}GPA: {{ edu.gpa }}{% endif %}
+      {% if edu.gpa and edu.honors %} | {% endif %}
+      {% if edu.honors %}{{ edu.honors }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Certifications Section -->
+  {% if visibility.certifications and certifications and certifications|length > 0 %}
+  <h2>Certifications</h2>
+  <ul>
+    {% for cert in certifications %}
+    <li>
+      <strong>{{ cert.name or cert.title }}</strong>{% if cert.issuer %} — {{ cert.issuer }}{% endif %}{% if cert.issue_date %} ({{ cert.issue_date }}){% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+</body>
+</html>

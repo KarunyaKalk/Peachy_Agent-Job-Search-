@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List, Any
 
@@ -10,9 +10,11 @@ from app.models.job import JobSeen
 from app.models.tailored_resume import TailoredResume
 from app.schemas.tailored_resume import TailoredResumeResponse, TailoredResumeUpdate
 from app.services.tailoring_service import ClaudeTailoringService
+from app.services.pdf_service import PDFService
 
 router = APIRouter(prefix="/tailor", tags=["tailoring"])
 claude_tailoring_service = ClaudeTailoringService()
+pdf_service = PDFService()
 
 
 @router.post("/{job_id}", response_model=TailoredResumeResponse)
@@ -75,7 +77,35 @@ def get_tailored_resume(
     return resume
 
 
+@router.get("/jobs/{job_id}/versions", response_model=List[TailoredResumeResponse])
+def get_tailored_resume_versions(
+    job_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    versions = (
+        db.query(TailoredResume)
+        .filter(TailoredResume.job_id == job_id, TailoredResume.user_id == current_user.id)
+        .order_by(TailoredResume.version_number.desc())
+        .all()
+    )
+    return versions
+
+
+@router.get("/versions/{version_id}", response_model=TailoredResumeResponse)
+def get_tailored_resume_version_by_id(
+    version_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    resume = db.query(TailoredResume).filter(TailoredResume.id == version_id, TailoredResume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+    return resume
+
+
 @router.put("/{resume_id}", response_model=TailoredResumeResponse)
+@router.put("/versions/{resume_id}", response_model=TailoredResumeResponse)
 def update_tailored_resume(
     resume_id: int,
     data: TailoredResumeUpdate,
@@ -96,3 +126,44 @@ def update_tailored_resume(
     db.commit()
     db.refresh(resume)
     return resume
+
+
+@router.post("/versions/{version_id}/finalize", response_model=TailoredResumeResponse)
+def finalize_tailored_resume(
+    version_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    resume = db.query(TailoredResume).filter(TailoredResume.id == version_id, TailoredResume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+
+    resume.status = "finalized"
+    db.commit()
+    db.refresh(resume)
+    return resume
+
+
+@router.get("/versions/{version_id}/pdf")
+def download_tailored_resume_pdf(
+    version_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    resume = db.query(TailoredResume).filter(TailoredResume.id == version_id, TailoredResume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+
+    job = db.query(JobSeen).filter(JobSeen.id == resume.job_id).first()
+    job_title = job.title if job else "Tailored Resume"
+    company_name = (job.company if job else "Company").replace(" ", "_")
+
+    pdf_bytes = pdf_service.render_resume_pdf(resume.tailored_json, job_title=job_title)
+    
+    filename = f"Resume_{company_name}_v{resume.version_number}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+

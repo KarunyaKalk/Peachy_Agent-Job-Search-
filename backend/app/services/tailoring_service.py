@@ -53,6 +53,63 @@ class ClaudeTailoringService:
         else:
             tailored_json = self._generate_tailored_fallback(master_profile, job)
 
+        # Ensure tailored_json has complete contact, project, education, and visibility properties
+        contact_info = {
+            "name": getattr(getattr(master_profile, "user", None), "full_name", "") or "Karunya Kalkhundiya",
+            "phone": master_profile.phone or "",
+            "location": master_profile.location or "",
+            "linkedin_url": master_profile.linkedin_url or "",
+            "github_url": master_profile.github_url or "",
+            "portfolio_url": master_profile.portfolio_url or "",
+            "email": getattr(getattr(master_profile, "user", None), "email", "") or "",
+        }
+
+        projects_list = []
+        for p in getattr(master_profile, "projects", []) or []:
+            projects_list.append({
+                "id": p.id,
+                "title": p.title,
+                "description": p.description or "",
+                "tech_stack": p.tech_stack or "",
+                "start_date": p.start_date or "",
+                "end_date": p.end_date or "",
+                "bullets": [b.content for b in (p.bullets or [])] if hasattr(p, "bullets") and p.bullets else []
+            })
+
+        education_list = []
+        for ed in getattr(master_profile, "education", []) or []:
+            education_list.append({
+                "id": ed.id,
+                "institution": ed.institution,
+                "degree": ed.degree,
+                "field_of_study": ed.field_of_study or "",
+                "graduation_date": ed.graduation_date or "",
+                "gpa": ed.gpa or "",
+                "honors": ed.honors or ""
+            })
+
+        certifications_list = []
+        for c in getattr(master_profile, "certifications", []) or []:
+            certifications_list.append({
+                "id": c.id,
+                "name": c.name,
+                "issuer": c.issuer or "",
+                "issue_date": c.issue_date or ""
+            })
+
+        tailored_json["contact"] = tailored_json.get("contact", contact_info)
+        tailored_json["projects"] = tailored_json.get("projects", projects_list)
+        tailored_json["education"] = tailored_json.get("education", education_list)
+        tailored_json["certifications"] = tailored_json.get("certifications", certifications_list)
+        tailored_json["visibility"] = tailored_json.get("visibility", {
+            "summary": True,
+            "skills": True,
+            "experiences": True,
+            "projects": True,
+            "education": True,
+            "certifications": True
+        })
+
         # Run Fact-Guard Audit
         fact_flags = FactGuardService.audit_tailored_resume(tailored_json, master_profile)
 
@@ -61,6 +118,7 @@ class ClaudeTailoringService:
             "tailored_json": tailored_json,
             "fact_guard_flags": fact_flags
         }
+
 
     async def _call_claude_api(
         self, profile_data: Dict[str, Any], job: JobSeen
