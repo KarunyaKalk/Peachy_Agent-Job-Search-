@@ -1,3 +1,5 @@
+import * as pdfjsLib from 'pdfjs-dist';
+import mammoth from 'mammoth';
 import {
   MasterProfile,
   ResumeParseResponse,
@@ -9,6 +11,9 @@ import {
   AmbiguityFlag,
 } from '../types/profile';
 
+// Set worker src to CDN for web bundle compatibility
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 /**
  * Extracts plain text from an uploaded PDF or DOCX file client-side.
  */
@@ -17,28 +22,49 @@ export async function extractTextFromClientFile(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
 
   if (ext === 'docx' || ext === 'doc') {
-    // Decode text from DOCX xml contents
+    try {
+      const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+      if (result.value && result.value.trim().length > 10) {
+        return result.value.trim();
+      }
+    } catch (e) {
+      console.warn('Mammoth DOCX parsing failed, trying raw XML decode fallback:', e);
+    }
+
     const decoder = new TextDecoder('utf-8');
     const rawStr = decoder.decode(buffer);
-    // DOCX files are zip archives containing word/document.xml
-    // Match all <w:t> or <w:t xml:space="preserve"> text nodes
     const matches = rawStr.match(/<w:t[^>]*>(.*?)<\/w:t>/g);
     if (matches && matches.length > 0) {
-      const textPieces = matches.map((m) => m.replace(/<[^>]+>/g, ''));
-      return textPieces.join(' ');
+      return matches.map((m) => m.replace(/<[^>]+>/g, '')).join(' ');
     }
-    // Fallback: extract printable ASCII text strings
     return rawStr.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
   }
 
   if (ext === 'pdf') {
-    // Extract text from PDF stream objects and text blocks
+    try {
+      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+      const pdf = await loadingTask.promise;
+      const pageTexts: string[] = [];
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageItems = textContent.items.map((item: any) => item.str);
+        pageTexts.push(pageItems.join(' '));
+      }
+
+      const combinedText = pageTexts.join('\n\n').trim();
+      if (combinedText && combinedText.length > 10) {
+        return combinedText;
+      }
+    } catch (e) {
+      console.warn('PDFjs parsing failed, using fallback stream extractor:', e);
+    }
+
+    // Fallback PDF text stream decoder
     const decoder = new TextDecoder('latin1');
     const rawStr = decoder.decode(buffer);
-
     const textSegments: string[] = [];
-
-    // Match PDF text strings: (Text) Tj
     const tjRegex = /\(([^()]*)\)\s*Tj/g;
     let match: RegExpExecArray | null;
     while ((match = tjRegex.exec(rawStr)) !== null) {
@@ -47,36 +73,13 @@ export async function extractTextFromClientFile(file: File): Promise<string> {
       }
     }
 
-    // Match PDF array text strings: [(Text1) num (Text2)] TJ
-    const tjArrRegex = /\[\s*((?:\([^()]*\)\s*[-0-9.\s]*)+)\s*\]\s*TJ/g;
-    while ((match = tjArrRegex.exec(rawStr)) !== null) {
-      const innerMatches = match[1].match(/\(([^()]*)\)/g);
-      if (innerMatches) {
-        textSegments.push(innerMatches.map((m) => m.slice(1, -1)).join(' '));
-      }
-    }
-
     if (textSegments.length > 5) {
       return textSegments.join(' ');
     }
 
-    // Fallback: extract text stream contents
-    const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
-    const streamTexts: string[] = [];
-    while ((match = streamRegex.exec(rawStr)) !== null) {
-      const s = match[1].replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ');
-      if (s.length > 20) streamTexts.push(s);
-    }
-
-    if (streamTexts.length > 0) {
-      return streamTexts.join('\n');
-    }
-
-    // Final fallback: printable ASCII extraction
     return rawStr.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ');
   }
 
-  // Plain text fallback
   const decoder = new TextDecoder('utf-8');
   return decoder.decode(buffer);
 }
@@ -168,15 +171,15 @@ export function parseRawResumeText(rawText: string, currentProfile: MasterProfil
   // Check lines in Skills section
   const skillsHeaderIdx = lines.findIndex((l) => /skills|technologies|expertise/i.test(l));
   if (skillsHeaderIdx !== -1) {
-    const skillLines = lines.slice(skillsHeaderIdx + 1, skillsHeaderIdx + 6);
+    const skillLines = lines.slice(skillsHeaderIdx + 1, skillsHeaderIdx + 8);
     skillLines.forEach((line) => {
-      if (line.length < 150) {
+      if (line.length < 200) {
         const parts = line.split(/[:,•·|]/);
         const cat = parts.length > 1 && parts[0].length < 25 ? parts[0].trim() : 'General';
         const items = parts.length > 1 ? parts.slice(1).join(',') : line;
         items.split(/[,;•]/).forEach((item) => {
           const name = item.trim();
-          if (name && name.length > 1 && name.length < 35 && !/skills|experience/i.test(name)) {
+          if (name && name.length > 1 && name.length < 35 && !/skills|experience|education/i.test(name)) {
             extractedSkillsMap.set(name.toLowerCase(), { category: cat, name });
           }
         });

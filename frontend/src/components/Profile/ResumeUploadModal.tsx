@@ -31,8 +31,10 @@ import {
   ParsedContactSummary,
 } from '../../types/profile';
 import { profileService } from '../../services/profile';
+import { extractTextFromClientFile, parseRawResumeText } from '../../services/resumeParserClient';
 
 interface ResumeUploadModalProps {
+
   isOpen: boolean;
   onClose: () => void;
   currentProfile: MasterProfile;
@@ -91,6 +93,74 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({
     }
   };
 
+  const populateResultState = (res: ResumeParseResponse) => {
+    setParseResult(res);
+
+    // Initialize review choices and editable states
+    const data = res.extracted_data;
+
+    // Contact fields
+    const initContactChoice: Record<string, 'accept' | 'skip' | 'edit'> = {};
+    const c = data.contact || {};
+    ['phone', 'location', 'linkedin_url', 'github_url', 'portfolio_url', 'summary'].forEach((field) => {
+      const val = (c as any)[field];
+      if (val) {
+        initContactChoice[field] = 'accept';
+      } else {
+        initContactChoice[field] = 'skip';
+      }
+    });
+    setSelectedContact(initContactChoice);
+    setEditedContact({ ...c });
+
+    // Experiences
+    const expChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
+    const exps = (data.experiences || []).map((exp, i) => {
+      expChoices[i] = 'accept';
+      return { ...exp };
+    });
+    setExperienceChoices(expChoices);
+    setEditedExperiences(exps);
+
+    // Skills
+    const skChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
+    const sks = (data.skills || []).map((sk, i) => {
+      skChoices[i] = 'accept';
+      return { ...sk };
+    });
+    setSkillChoices(skChoices);
+    setEditedSkills(sks);
+
+    // Projects
+    const projChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
+    const projs = (data.projects || []).map((p, i) => {
+      projChoices[i] = 'accept';
+      return { ...p };
+    });
+    setProjectChoices(projChoices);
+    setEditedProjects(projs);
+
+    // Education
+    const edChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
+    const eds = (data.education || []).map((ed, i) => {
+      edChoices[i] = 'accept';
+      return { ...ed };
+    });
+    setEduChoices(edChoices);
+    setEditedEducation(eds);
+
+    // Certifications
+    const ctChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
+    const cts = (data.certifications || []).map((ct, i) => {
+      ctChoices[i] = 'accept';
+      return { ...ct };
+    });
+    setCertChoices(ctChoices);
+    setEditedCerts(cts);
+
+    setStep('review');
+  };
+
   const handleUploadAndParse = async () => {
     if (!file) {
       setError('Please select a resume file to upload.');
@@ -102,78 +172,22 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({
 
     try {
       const res = await profileService.uploadResume(file);
-      setParseResult(res);
-
-      // Initialize review choices and editable states
-      const data = res.extracted_data;
-
-      // Contact fields
-      const initContactChoice: Record<string, 'accept' | 'skip' | 'edit'> = {};
-      const c = data.contact || {};
-      ['phone', 'location', 'linkedin_url', 'github_url', 'portfolio_url', 'summary'].forEach((field) => {
-        const val = (c as any)[field];
-        if (val) {
-          initContactChoice[field] = 'accept';
-        } else {
-          initContactChoice[field] = 'skip';
-        }
-      });
-      setSelectedContact(initContactChoice);
-      setEditedContact({ ...c });
-
-      // Experiences
-      const expChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
-      const exps = (data.experiences || []).map((exp, i) => {
-        expChoices[i] = 'accept';
-        return { ...exp };
-      });
-      setExperienceChoices(expChoices);
-      setEditedExperiences(exps);
-
-      // Skills
-      const skChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
-      const sks = (data.skills || []).map((sk, i) => {
-        skChoices[i] = 'accept';
-        return { ...sk };
-      });
-      setSkillChoices(skChoices);
-      setEditedSkills(sks);
-
-      // Projects
-      const projChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
-      const projs = (data.projects || []).map((p, i) => {
-        projChoices[i] = 'accept';
-        return { ...p };
-      });
-      setProjectChoices(projChoices);
-      setEditedProjects(projs);
-
-      // Education
-      const edChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
-      const eds = (data.education || []).map((ed, i) => {
-        edChoices[i] = 'accept';
-        return { ...ed };
-      });
-      setEduChoices(edChoices);
-      setEditedEducation(eds);
-
-      // Certifications
-      const ctChoices: Record<number, 'accept' | 'skip' | 'edit'> = {};
-      const cts = (data.certifications || []).map((ct, i) => {
-        ctChoices[i] = 'accept';
-        return { ...ct };
-      });
-      setCertChoices(ctChoices);
-      setEditedCerts(cts);
-
-      setStep('review');
+      populateResultState(res);
     } catch (err: any) {
-      console.error('Failed to parse resume:', err);
-      setError(err?.response?.data?.detail || 'Failed to extract text from resume. Please try another file.');
+      console.warn('Backend API resume extraction failed, attempting client-side fallback:', err);
+      try {
+        const rawText = await extractTextFromClientFile(file);
+        const res = parseRawResumeText(rawText, currentProfile);
+        populateResultState(res);
+      } catch (fallbackErr: any) {
+        console.error('All resume extraction attempts failed:', fallbackErr);
+        setError('Failed to extract text from resume. Please ensure it is a valid PDF or DOCX file.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleAcceptAllNonConflicting = () => {
     // Select accept for all non-empty extracted fields
