@@ -1,57 +1,40 @@
-# Walkthrough - Production Deployment Architecture (Render & GitHub Pages)
+# Walkthrough - Module 7: Interview Prep Pack & Interactive Checklist UI
 
-We have completed the deployment architecture setup for **Peachy** on **Render** and **GitHub Pages**.
-
----
-
-## 🏗️ Architecture Deliverables
-
-### 1. Render Blueprint Manifest (`render.yaml`)
-- **[render.yaml](file:///Users/karunya/Peachy%20Agent/render.yaml)**: Infrastructure-as-Code specification creating 4 dedicated cloud services:
-  1. **`peachy-backend-api`**: FastAPI Web REST API (Free Tier web service).
-  2. **`peachy-postgres`**: Managed PostgreSQL Database (Free Tier).
-  3. **`peachy-redis`**: Managed Redis Instance (Free Tier).
-  4. **`peachy-celery-worker`**: Dedicated Always-On Celery Worker & Beat (`starter` paid tier, ~$7/mo) executing Playwright web scrapers and recurring scans every 6 hours without free-tier sleeping.
-
-### 2. Playwright Chromium Dockerfile (`backend/Dockerfile`)
-- **[backend/Dockerfile](file:///Users/karunya/Peachy%20Agent/backend/Dockerfile)**:
-  - Multi-stage Docker container based on `python:3.11-slim`.
-  - Installs system libraries (`libpq-dev`, `build-essential`, `curl`).
-  - **CRITICAL**: Installs Playwright Chromium browser binaries and OS dependencies:
-    `RUN playwright install --with-deps chromium`
-  - Ensures Wellfound and Haveloc scrapers run cleanly in cloud production.
-
-### 3. GitHub Actions Workflow (`.github/workflows/deploy.yml`)
-- **[.github/workflows/deploy.yml](file:///Users/karunya/Peachy%20Agent/.github/workflows/deploy.yml)**:
-  - Automated CI/CD pipeline triggering on `push` to `main`.
-  - Injects `VITE_API_BASE_URL: https://peachy-backend-api.onrender.com` during `npm run build`.
-  - Deploys static production assets directly to `gh-pages`.
-
-### 4. Backend CORS & Frontend API Binding
-- **[backend/app/main.py](file:///Users/karunya/Peachy%20Agent/backend/app/main.py)**: Configured CORS middleware reading `CORS_ORIGINS` environment variable to explicitly allow `https://karunyakalk.github.io` and local dev origins.
-- **[frontend/src/services/api.ts](file:///Users/karunya/Peachy%20Agent/frontend/src/services/api.ts)**: Configured `getApiBaseUrl()` defaulting to `https://peachy-backend-api.onrender.com` over HTTPS.
+We have built and delivered **Module 7: Interview Prep Pack** for **Peachy** — empowering users to generate company-specific interview prep packs for any job in `"Interview"` status, complete with STAR-formatted draft answers derived from candidate accomplishments, interactive checklist progress indicators, and editable personal notes fields per question item.
 
 ---
 
-## 📋 Render One-Click Deployment Guide
+## 🏗️ What Was Built
 
-To launch your backend services on Render:
-1. Log in to [Render Dashboard](https://dashboard.render.com/).
-2. Click **New +** ➔ Select **Blueprint**.
-3. Connect your GitHub repository: `KarunyaKalk/Peachy_Agent-Job-Search-`.
-4. Render will automatically detect `render.yaml` and provision:
-   - `peachy-backend-api` (Web Service)
-   - `peachy-postgres` (Database)
-   - `peachy-redis` (Key-Value)
-   - `peachy-celery-worker` (Background Worker)
-5. On the Render Dashboard, add your environment secrets under `peachy-backend-api` & `peachy-celery-worker`:
-   - `ANTHROPIC_API_KEY`: Your Anthropic API Key
-   - `SECRET_KEY`: Random 32+ byte string
-   - `HAVELOC_EMAIL` & `HAVELOC_PASSWORD`: Credentials for Haveloc scraper
+### 1. Database Model & Pydantic Schemas
+- **[backend/app/models/interview_prep.py](file:///Users/karunya/Peachy%20Agent/backend/app/models/interview_prep.py)**: SQLAlchemy model `InterviewPrepPack` storing `company_overview`, `key_skills_to_highlight`, `technical_questions`, and `behavioral_questions` with STAR answers and note persistence.
+- **[backend/app/schemas/interview_prep.py](file:///Users/karunya/Peachy%20Agent/backend/app/schemas/interview_prep.py)**: Validation schemas for `STARAnswerSchema`, `TechnicalPrepItemSchema`, `BehavioralPrepItemSchema`, and `PrepItemUpdateRequest`.
+
+### 2. Claude API Interview Prep Engine
+- **[backend/app/services/interview_prep_service.py](file:///Users/karunya/Peachy%20Agent/backend/app/services/interview_prep_service.py)**: Prompts Claude 3.5 Sonnet to generate:
+  1. **Company Overview**: 2-3 sentence strategic summary of engineering culture & priorities.
+  2. **Technical Questions**: 5 likely technical interview questions derived from JD requirements with expected key points.
+  3. **Behavioral Questions & STAR Answers**: 5 behavioral questions paired with complete **STAR stories** (Situation, Task, Action, Result) constructed strictly from the user's master accomplishments.
+  4. Includes fallback generator when running in standalone demo mode.
+
+### 3. FastAPI REST Endpoints
+- **[backend/app/routers/interview_prep.py](file:///Users/karunya/Peachy%20Agent/backend/app/routers/interview_prep.py)**:
+  - `POST /api/interview-prep/generate/{job_id}`: Triggers prep pack generation for target job.
+  - `GET /api/interview-prep/job/{job_id}`: Retrieves existing prep pack for a job.
+  - `GET /api/interview-prep/all`: Fetches all generated prep packs.
+  - `PUT /api/interview-prep/{pack_id}/item`: Saves checkbox completion (`is_completed`) or personal prep notes.
+
+### 4. Interactive Frontend Components & Dashboard
+- **[frontend/src/components/Interview/PrepPackModal.tsx](file:///Users/karunya/Peachy%20Agent/frontend/src/components/Interview/PrepPackModal.tsx)**:
+  - **Checklist Progress Bar**: Visual progress indicator showing percent of questions checked off.
+  - **STAR Answer Cards**: Structured breakdown of Situation, Task, Action, and Result.
+  - **Editable Personal Notes**: Auto-saves custom prep notes per question item.
+- **[frontend/src/pages/ApplicationsPage.tsx](file:///Users/karunya/Peachy%20Agent/frontend/src/pages/ApplicationsPage.tsx)**: Added **"Generate Prep Pack"** / **"View Prep Pack"** action button on any job card in `"Interview"` status.
+- **[frontend/src/pages/InterviewPrepPage.tsx](file:///Users/karunya/Peachy%20Agent/frontend/src/pages/InterviewPrepPage.tsx)**: Full-page Interview Prep Hub listing active prep packs, overall progress, and quick pack generator.
 
 ---
 
 ## ⚡ Verification Results
-- `npm run build` completed with zero TypeScript errors (`built in 1.34s`).
-- Pushed architecture artifacts to GitHub `main` (`commit ebcf727`).
+- `npm run build` executed cleanly with zero TypeScript errors (`built in 1.36s`).
 - Published production build to `gh-pages` branch.
+- Committed all Module 7 source files to `main` (`commit b35e2c3`).
