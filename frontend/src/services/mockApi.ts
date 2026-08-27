@@ -2,8 +2,10 @@ import { User, AuthResponse } from '../types';
 import { MasterProfile, ResumeParseResponse, ApplyParsedResumePayload } from '../types/profile';
 import { Job, JobScanResult } from '../types/job';
 import { TailoredResume } from '../types/tailoring';
+import { extractTextFromClientFile, parseRawResumeText } from './resumeParserClient';
 
 const MOCK_STORAGE_KEY_USER = 'peachy_mock_user_v1';
+
 const MOCK_STORAGE_KEY_PROFILE = 'peachy_mock_profile_v1';
 const MOCK_STORAGE_KEY_JOBS = 'peachy_mock_jobs_v1';
 
@@ -159,81 +161,17 @@ export const mockApiEngine = {
     return updated;
   },
 
-  uploadResume: (file: File): ResumeParseResponse => {
+  uploadResume: async (file: File): Promise<ResumeParseResponse> => {
     const current = mockApiEngine.getProfile();
-    const fileName = file.name || 'Uploaded_Resume.pdf';
-    return {
-      extracted_data: {
-        contact: {
-          phone: current.phone || '+1 (555) 234-5678',
-          location: current.location || 'San Francisco, CA',
-          linkedin_url: current.linkedin_url || 'https://linkedin.com/in/karunya',
-          github_url: current.github_url || 'https://github.com/KarunyaKalk',
-          portfolio_url: current.portfolio_url || 'https://karunyakalk.dev',
-          summary: current.summary || 'High-impact Senior Full Stack & AI Software Engineer with expertise in building scalable cloud microservices.',
-        },
-        summary: current.summary || 'High-impact Senior Full Stack & AI Software Engineer with expertise in building scalable cloud microservices.',
-        skills: [
-          { name: 'Python', category: 'Backend', proficiency: 'Expert' },
-          { name: 'TypeScript', category: 'Languages', proficiency: 'Expert' },
-          { name: 'React', category: 'Frontend', proficiency: 'Expert' },
-          { name: 'FastAPI', category: 'Backend', proficiency: 'Expert' },
-          { name: 'PostgreSQL', category: 'Database', proficiency: 'Advanced' },
-          { name: 'Docker', category: 'DevOps', proficiency: 'Advanced' },
-          { name: 'Redis', category: 'Backend', proficiency: 'Advanced' },
-        ],
-        experiences: [
-          {
-            company: 'Linear Tech',
-            role: 'Senior Software Engineer',
-            start_date: '2022-01',
-            end_date: 'Present',
-            is_current: true,
-            location: 'San Francisco, CA',
-            bullets: [
-              { content: 'Architected WebSocket and Redis pub-sub event distribution pipeline handling over 100k concurrent client connections with sub-50ms latency.' },
-              { content: 'Led team of 5 engineers delivering high-performance cloud APIs in FastAPI and PostgreSQL.' },
-            ],
-          },
-        ],
-        projects: [
-          {
-            title: 'Peachy AI Job Agent',
-            description: 'Autonomous job search agent with real-time ATS scoring and human-in-the-loop safety features.',
-            technologies: 'TypeScript, React, Python, FastAPI, Docker',
-          },
-        ],
-        education: [
-          {
-            institution: 'Stanford University',
-            degree: 'Bachelor of Science in CS',
-            field_of_study: 'Computer Science',
-            start_date: '2017',
-            end_date: '2021',
-          },
-        ],
-        certifications: [
-          {
-            name: 'AWS Certified Solutions Architect',
-            issuing_organization: 'Amazon Web Services',
-            issue_date: '2023',
-          },
-        ],
-      },
-      current_profile: current,
-      ambiguities: [
-        {
-          id: 'amb_date_1',
-          section: 'experience',
-          item_identifier: 'Software Engineer at Linear Tech',
-          field: 'start_date',
-          reason: 'Employment start month extracted from resume text is ambiguous.',
-          suggested_action: 'Verify start date format (YYYY-MM).',
-        },
-      ],
-      raw_text_snippet: `Sample extracted text from uploaded resume (${fileName}): Karunya Kalk - Senior Software Engineer - San Francisco, CA`,
-    };
+    try {
+      const rawText = await extractTextFromClientFile(file);
+      return parseRawResumeText(rawText, current);
+    } catch (e) {
+      console.error('Client-side resume text extraction failed:', e);
+      return parseRawResumeText(file.name || '', current);
+    }
   },
+
 
   applyParsedResume: (payload: ApplyParsedResumePayload): MasterProfile => {
     const current = mockApiEngine.getProfile();

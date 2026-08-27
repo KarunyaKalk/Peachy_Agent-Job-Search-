@@ -27,8 +27,9 @@ export const profileService = {
       });
       return response.data;
     } catch {
-      return mockApiEngine.uploadResume(file);
+      return await mockApiEngine.uploadResume(file);
     }
+
   },
 
   applyParsedResume: async (payload: ApplyParsedResumePayload): Promise<MasterProfile> => {
