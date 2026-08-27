@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routers import auth, health, profile, jobs, tailoring, applications, cold_email
+from app.routers import auth, health, profile, jobs, tailoring, applications, cold_email, interview_prep
 from app.services.scheduler import start_job_scheduler
 
 # Create DB tables automatically on startup
@@ -43,6 +43,7 @@ app.include_router(jobs.router, prefix=settings.API_V1_STR)
 app.include_router(tailoring.router, prefix=settings.API_V1_STR)
 app.include_router(applications.router, prefix=settings.API_V1_STR)
 app.include_router(cold_email.router, prefix=settings.API_V1_STR)
+app.include_router(interview_prep.router, prefix=settings.API_V1_STR)
 
 
 

@@ -929,6 +929,142 @@ github.com/KarunyaKalk | karunyakalk.dev`;
     if (jobId) return defaultLog.filter((l) => l.job_id === jobId);
     return defaultLog;
   },
+
+  generateInterviewPrepPack: (jobId: number): any => {
+    const STORAGE_KEY_PREP = 'peachy_mock_prep_packs_v1';
+    let savedPacks: any[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_PREP);
+      if (raw) savedPacks = JSON.parse(raw);
+    } catch {}
+
+    const jobs = mockApiEngine.getJobs();
+    const targetJob = jobs.find((j) => j.id === jobId) || jobs[0];
+
+    const pack: any = {
+      id: Date.now(),
+      user_id: 1,
+      job_id: jobId,
+      company_name: targetJob.company,
+      role_title: targetJob.title,
+      company_overview: `${targetJob.company} is a market-leading technology company specializing in high-concurrency cloud systems, clean API design, and modern web applications. Technical interviews focus heavily on system architecture, database optimization, and cross-functional team execution.`,
+      key_skills_to_highlight: ['System Design', 'Python / FastAPI', 'TypeScript / React', 'PostgreSQL Optimization', 'Redis Pub-Sub'],
+      technical_questions: [
+        {
+          id: 'tech_1',
+          question: `How would you design a high-concurrency real-time messaging pipeline for ${targetJob.company}?`,
+          topic: 'System Design & Scale',
+          expected_answer: 'Discuss WebSocket gateways, Redis pub-sub messaging, horizontal microservice scaling, and sub-50ms latency guarantees.',
+          notes: 'Focus on Redis pub-sub architecture from Linear project bullet.',
+          is_completed: true,
+        },
+        {
+          id: 'tech_2',
+          question: 'Walk me through how you optimize slow PostgreSQL queries under peak load.',
+          topic: 'Database Optimization',
+          expected_answer: 'Explain EXPLAIN ANALYZE, composite B-Tree indexes, connection pooling, and caching strategy.',
+          notes: '',
+          is_completed: false,
+        },
+        {
+          id: 'tech_3',
+          question: 'How do you enforce type safety and robust API contracts between frontend and backend?',
+          topic: 'API Design',
+          expected_answer: 'Discuss Pydantic v2 schemas, OpenAPI specs, TypeScript strict mode, and automated integration contracts.',
+          notes: '',
+          is_completed: false,
+        },
+      ],
+      behavioral_questions: [
+        {
+          id: 'beh_1',
+          question: 'Tell me about a time you led a major architectural migration under a tight deadline.',
+          competency: 'Leadership & Execution',
+          star_answer: {
+            situation: 'While working on high-throughput backend services, legacy HTTP polling created server memory bottlenecks.',
+            task: 'Tasked with redesigning real-time event pipeline to support over 100k active concurrent clients.',
+            action: 'Architected a decoupled WebSocket and Redis pub-sub messaging architecture with zero downtime.',
+            result: 'Reduced event distribution latency to sub-50ms and eliminated server memory spikes by 75%.',
+          },
+          notes: 'My primary go-to STAR story.',
+          is_completed: true,
+        },
+        {
+          id: 'beh_2',
+          question: 'Describe a scenario where you resolved a technical disagreement with a team member.',
+          competency: 'Collaboration & Communication',
+          star_answer: {
+            situation: 'Team was split between GraphQL vs REST for a new developer API.',
+            task: 'Align stakeholders around performance, security, and developer ergonomics.',
+            action: 'Created a rapid benchmark prototype comparing payload size, caching, and rate limiting.',
+            result: 'Team agreed on a structured REST API with OpenAPI documentation, delivering 2 weeks ahead of schedule.',
+          },
+          notes: '',
+          is_completed: false,
+        },
+      ],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    savedPacks = [pack, ...savedPacks.filter((p) => p.job_id !== jobId)];
+    try {
+      localStorage.setItem(STORAGE_KEY_PREP, JSON.stringify(savedPacks));
+    } catch {}
+
+    return pack;
+  },
+
+  getInterviewPrepPack: (jobId: number): any => {
+    const STORAGE_KEY_PREP = 'peachy_mock_prep_packs_v1';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_PREP);
+      if (saved) {
+        const packs: any[] = JSON.parse(saved);
+        const found = packs.find((p) => p.job_id === jobId);
+        if (found) return found;
+      }
+    } catch {}
+    return mockApiEngine.generateInterviewPrepPack(jobId);
+  },
+
+  getAllInterviewPrepPacks: (): any[] => {
+    const STORAGE_KEY_PREP = 'peachy_mock_prep_packs_v1';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_PREP);
+      if (saved) {
+        const list: any[] = JSON.parse(saved);
+        if (list.length > 0) return list;
+      }
+    } catch {}
+    const defaultPack = mockApiEngine.generateInterviewPrepPack(1);
+    return [defaultPack];
+  },
+
+  updatePrepItem: (
+    packId: number,
+    data: { item_id: string; item_type: 'technical' | 'behavioral'; is_completed?: boolean; notes?: string }
+  ): any => {
+    const STORAGE_KEY_PREP = 'peachy_mock_prep_packs_v1';
+    const packs = mockApiEngine.getAllInterviewPrepPacks();
+    const packIndex = packs.findIndex((p) => p.id === packId);
+    if (packIndex === -1) return packs[0] || mockApiEngine.generateInterviewPrepPack(1);
+
+    const pack = packs[packIndex];
+    const items = data.item_type === 'technical' ? pack.technical_questions : pack.behavioral_questions;
+    for (const item of items) {
+      if (item.id === data.item_id) {
+        if (data.is_completed !== undefined) item.is_completed = data.is_completed;
+        if (data.notes !== undefined) item.notes = data.notes;
+      }
+    }
+
+    packs[packIndex] = pack;
+    try {
+      localStorage.setItem(STORAGE_KEY_PREP, JSON.stringify(packs));
+    } catch {}
+    return pack;
+  },
 };
 
 

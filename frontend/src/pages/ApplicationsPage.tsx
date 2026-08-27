@@ -27,6 +27,9 @@ import {
   ChevronRight,
   Eye,
 } from 'lucide-react';
+import { PrepPackModal } from '../components/Interview/PrepPackModal';
+import { interviewPrepService } from '../services/interview_prep';
+import { InterviewPrepPack } from '../types/interview_prep';
 import { usePeachyEvents } from '../context/PeachyEventContext';
 
 const KANBAN_STAGES: ApplicationStatus[] = [
@@ -55,6 +58,22 @@ export const ApplicationsPage: React.FC = () => {
   // Active Modals state
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  
+  // Active Interview Prep Pack Modal state
+  const [activePrepPack, setActivePrepPack] = useState<InterviewPrepPack | null>(null);
+  const [generatingPrepForJobId, setGeneratingPrepForJobId] = useState<number | null>(null);
+
+  const handleOpenPrepPack = async (jobId: number) => {
+    setGeneratingPrepForJobId(jobId);
+    try {
+      const pack = await interviewPrepService.generatePrepPack(jobId);
+      setActivePrepPack(pack);
+    } catch (err) {
+      console.error('Failed to generate prep pack:', err);
+    } finally {
+      setGeneratingPrepForJobId(null);
+    }
+  };
   
   // Form Pre-Fill Confirmation Modal state
   const [pendingPreFillApp, setPendingPreFillApp] = useState<Application | null>(null);
@@ -484,6 +503,22 @@ export const ApplicationsPage: React.FC = () => {
                                   <span>{isSubmitting ? 'Form Pre-Filling...' : 'Submit Application'}</span>
                                 </button>
                               )}
+
+                              {/* Generate/View Prep Pack Action for Interview Cards */}
+                              {app.status === 'Interview' && (
+                                <button
+                                  onClick={() => handleOpenPrepPack(app.job_id)}
+                                  disabled={generatingPrepForJobId === app.job_id}
+                                  className="w-full mt-1 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] rounded shadow-glow-purple flex items-center justify-center space-x-1 disabled:opacity-50"
+                                >
+                                  <Sparkles className="w-3 h-3 text-amber-300" />
+                                  <span>
+                                    {generatingPrepForJobId === app.job_id
+                                      ? 'Generating Pack...'
+                                      : 'Generate Prep Pack'}
+                                  </span>
+                                </button>
+                              )}
                             </div>
                           );
                         })
@@ -495,6 +530,15 @@ export const ApplicationsPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Interview Prep Pack Modal */}
+      {activePrepPack && (
+        <PrepPackModal
+          prepPack={activePrepPack}
+          onClose={() => setActivePrepPack(null)}
+          onUpdate={fetchKanban}
+        />
       )}
 
       {/* Form Pre-Fill Hard Pause Confirmation Modal */}
