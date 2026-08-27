@@ -2,13 +2,13 @@
 
 An autonomous, human-in-the-loop AI agent that discovers relevant job postings across multiple platforms, tailors resumes per job description with zero hallucinations, scores ATS compatibility, pre-fills application forms with safety pauses, dispatches personalized cold outreach, generates STAR interview prep packs, and logs a transparent audit trail.
 
-Live GitHub Pages Application: https://KarunyaKalk.github.io/Peachy_Agent-Job-Search-
+Live GitHub Pages Application: https://KarunyaKalk.github.io/Peachy_Agent-Job-Search-/
 
 ---
 
 ## Live Deployment Links
 
-- Deployed GitHub Pages App: https://KarunyaKalk.github.io/Peachy_Agent-Job-Search-
+- Deployed GitHub Pages App: https://KarunyaKalk.github.io/Peachy_Agent-Job-Search-/
 - Hosted REST API Documentation: https://peachy-backend-api.onrender.com/api/docs
 - Source Code Repository: https://github.com/KarunyaKalk/Peachy_Agent-Job-Search-
 

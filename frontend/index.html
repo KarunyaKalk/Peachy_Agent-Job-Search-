@@ -8,6 +8,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script type="text/javascript">
+      // SPA route decoder for GitHub Pages subpath deployment
+      (function(l) {
+        if (l.search[1] === 'p') {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).filter(function(s) {
+            return s.slice(0, 2) === 'p='
+          })[0].slice(2);
+          if (decoded !== l.pathname) {
+            window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+            );
+          }
+        }
+      }(window.location))
+    </script>
   </head>
   <body class="bg-dark-bg text-slate-100 antialiased font-sans min-h-screen">
     <div id="root"></div>
