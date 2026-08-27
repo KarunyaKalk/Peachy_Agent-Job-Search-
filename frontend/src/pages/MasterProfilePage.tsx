@@ -172,8 +172,13 @@ export const MasterProfilePage: React.FC = () => {
           {/* Active Tab Viewport */}
           <div className="pt-2">
             {activeTab === 'contact' && (
-              <ContactSummarySection profile={profile} onUpdate={setProfile} />
+              <ContactSummarySection
+                profile={profile}
+                onUpdate={setProfile}
+                onOpenUploadModal={() => setIsUploadModalOpen(true)}
+              />
             )}
+
             {activeTab === 'experience' && (
               <ExperienceSection profile={profile} onUpdate={setProfile} />
             )}

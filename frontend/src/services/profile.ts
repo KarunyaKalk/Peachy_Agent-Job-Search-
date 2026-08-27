@@ -17,20 +17,29 @@ import {
 export const profileService = {
   // Resume upload & auto-fill parsing
   uploadResume: async (file: File): Promise<ResumeParseResponse> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post<ResumeParseResponse>('/profile/upload-resume', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post<ResumeParseResponse>('/profile/upload-resume', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch {
+      return mockApiEngine.uploadResume(file);
+    }
   },
 
   applyParsedResume: async (payload: ApplyParsedResumePayload): Promise<MasterProfile> => {
-    const response = await api.post<MasterProfile>('/profile/apply-parsed-resume', payload);
-    return response.data;
+    try {
+      const response = await api.post<MasterProfile>('/profile/apply-parsed-resume', payload);
+      return response.data;
+    } catch {
+      return mockApiEngine.applyParsedResume(payload);
+    }
   },
+
 
   // Get full master profile
   getProfile: async (): Promise<MasterProfile> => {

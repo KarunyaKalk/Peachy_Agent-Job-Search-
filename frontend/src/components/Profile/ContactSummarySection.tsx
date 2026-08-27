@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { MasterProfile } from '../../types/profile';
 import { profileService } from '../../services/profile';
-import { Mail, Phone, MapPin, Linkedin, Github, Globe, Save, CheckCircle, FileText } from 'lucide-react';
+import { Mail, Phone, MapPin, Linkedin, Github, Globe, Save, CheckCircle, FileText, Upload, Sparkles } from 'lucide-react';
 
 interface Props {
   profile: MasterProfile;
   onUpdate: (updated: MasterProfile) => void;
+  onOpenUploadModal?: () => void;
 }
 
-export const ContactSummarySection: React.FC<Props> = ({ profile, onUpdate }) => {
+export const ContactSummarySection: React.FC<Props> = ({ profile, onUpdate, onOpenUploadModal }) => {
   const [formData, setFormData] = useState({
     phone: profile.phone || '',
     location: profile.location || '',
@@ -43,6 +44,37 @@ export const ContactSummarySection: React.FC<Props> = ({ profile, onUpdate }) =>
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
+      {/* Resume Auto-Fill Prompt Banner */}
+      {onOpenUploadModal && (
+        <div className="glass-panel p-5 border border-peach-500/30 bg-gradient-to-r from-peach-500/10 via-dark-card to-dark-card rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-peach-500/5">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-11 h-11 rounded-xl bg-peach-500/20 border border-peach-500/30 flex items-center justify-center text-peach-400 flex-shrink-0">
+              <Upload className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Want to skip hand-typing your profile?</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-peach-500/20 text-peach-400 border border-peach-500/30">
+                  AI Auto-Fill
+                </span>
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Upload your PDF or DOCX resume to automatically parse contact, summary, skills, experience, projects, & education.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenUploadModal}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-peach-500 to-peach-600 hover:from-peach-400 hover:to-peach-500 text-white font-semibold text-xs shadow-lg shadow-peach-500/20 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap flex-shrink-0"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Upload Resume to Auto-Fill</span>
+          </button>
+        </div>
+      )}
+
       {/* Contact Information */}
       <div className="glass-panel p-6 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-dark-border/60">
