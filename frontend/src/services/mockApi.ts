@@ -1065,6 +1065,132 @@ github.com/KarunyaKalk | karunyakalk.dev`;
     } catch {}
     return pack;
   },
+
+  getSettings: (): any => {
+    const STORAGE_KEY_SETTINGS = 'peachy_mock_settings_v1';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SETTINGS);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+
+    const defaultSettings = {
+      id: 1,
+      user_id: 1,
+      scan_frequency_hours: 6,
+      ats_score_threshold: 80,
+      daily_application_cap: 20,
+      daily_cold_email_cap: 15,
+      adzuna_enabled: true,
+      wellfound_enabled: true,
+      haveloc_enabled: true,
+      linkedin_enabled: true,
+      telegram_webhook_url: '',
+      email_webhook_url: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(defaultSettings));
+    return defaultSettings;
+  },
+
+  updateSettings: (data: any): any => {
+    const STORAGE_KEY_SETTINGS = 'peachy_mock_settings_v1';
+    const current = mockApiEngine.getSettings();
+    const updated = { ...current, ...data, updated_at: new Date().toISOString() };
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(updated));
+    return updated;
+  },
+
+  getAuditLogs: (category?: string, status?: string): any[] => {
+    const STORAGE_KEY_AUDIT = 'peachy_mock_audit_logs_v1';
+    let logs: any[] = [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_AUDIT);
+      if (saved) logs = JSON.parse(saved);
+    } catch {}
+
+    if (logs.length === 0) {
+      const now = new Date();
+      logs = [
+        {
+          id: 101,
+          user_id: 1,
+          category: 'scrape_run',
+          action: 'Multi-Source Job Scan Completed',
+          details: 'Scanned Adzuna, Wellfound, Haveloc & LinkedIn. Found 8 positions, 3 new added.',
+          status: 'success',
+          timestamp: new Date(now.getTime() - 1000 * 60 * 15).toISOString(),
+        },
+        {
+          id: 102,
+          user_id: 1,
+          category: 'resume_generation',
+          action: 'Claude Resume Tailored & Fact-Guard Audit Passed',
+          details: 'Tailored resume for Senior Full Stack Engineer @ Linear. 3 claims verified, 0 flagged.',
+          status: 'success',
+          timestamp: new Date(now.getTime() - 1000 * 60 * 45).toISOString(),
+        },
+        {
+          id: 103,
+          user_id: 1,
+          category: 'captcha_blocked',
+          action: 'Playwright Scraper Rate Limit Alert',
+          details: 'Wellfound bot detection triggered CAPTCHA warning. Scraper paused cleanly with zero retries.',
+          status: 'warning',
+          timestamp: new Date(now.getTime() - 1000 * 60 * 120).toISOString(),
+        },
+        {
+          id: 104,
+          user_id: 1,
+          category: 'email_sent',
+          action: 'Cold Email Dispatched via SendGrid',
+          details: 'Sent outreach email to Alex Rivera (arivera@linear.app) with CAN-SPAM opt-out line.',
+          status: 'success',
+          timestamp: new Date(now.getTime() - 1000 * 60 * 180).toISOString(),
+        },
+        {
+          id: 105,
+          user_id: 1,
+          category: 'application_submitted',
+          action: 'Playwright Application Form Pre-filled',
+          details: 'Pre-filled application form for Anthropic AI Engineer. Hard pause active awaiting user confirmation.',
+          status: 'success',
+          timestamp: new Date(now.getTime() - 1000 * 60 * 240).toISOString(),
+        },
+      ];
+      localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(logs));
+    }
+
+    if (category && category.toLowerCase() !== 'all') {
+      logs = logs.filter((l) => l.category === category);
+    }
+    if (status && status.toLowerCase() !== 'all') {
+      logs = logs.filter((l) => l.status === status);
+    }
+
+    return logs;
+  },
+
+  createAuditLog: (data: { category: string; action: string; details?: string; status?: string }): any => {
+    const STORAGE_KEY_AUDIT = 'peachy_mock_audit_logs_v1';
+    const logs = mockApiEngine.getAuditLogs();
+    const newEntry = {
+      id: Date.now(),
+      user_id: 1,
+      category: data.category,
+      action: data.action,
+      details: data.details || '',
+      status: data.status || 'success',
+      timestamp: new Date().toISOString(),
+    };
+
+    logs.unshift(newEntry);
+    try {
+      localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(logs));
+    } catch {}
+    return newEntry;
+  },
 };
 
 

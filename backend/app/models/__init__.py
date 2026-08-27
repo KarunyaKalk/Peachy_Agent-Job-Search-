@@ -18,6 +18,8 @@ from app.models.interview_prep import InterviewPrepPack
 from app.models.application import Application
 from app.models.cold_email import ColdEmailDraft
 from app.models.outreach import Outreach
+from app.models.settings import SystemSettings
+from app.models.audit import AuditLog
 
 __all__ = [
     "Base",
@@ -37,4 +39,6 @@ __all__ = [
     "Application",
     "ColdEmailDraft",
     "Outreach",
+    "SystemSettings",
+    "AuditLog",
 ]
