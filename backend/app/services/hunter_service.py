@@ -9,6 +9,8 @@ class HunterService:
     Legitimately finds hiring managers, talent partners, and engineering leadership
     email contacts tied to target company domains with verified confidence scores.
     Zero scraping of LinkedIn.
+    Strict Verification: Returns only verified contacts from API or explicit 'No verified contact found'.
+    Never invents synthesized names or emails.
     """
 
     def __init__(self):
@@ -19,6 +21,7 @@ class HunterService:
         """
         Derives company domain and queries Hunter.io Domain Search API.
         Returns list of structured contacts with name, position title, email, confidence score.
+        If no verified contacts are found or API key is unconfigured, returns an empty list.
         """
         domain = self._extract_domain(company_name, apply_url)
 
@@ -53,16 +56,16 @@ class HunterService:
                                 "email": email_addr,
                                 "confidence_score": confidence,
                                 "domain": domain,
-                                "source": "Hunter.io Domain Search"
+                                "source": "Hunter.io Domain Search (Verified)"
                             })
 
                         if results:
                             return results
             except Exception as e:
-                print(f"[Hunter.io API Warning] Call failed: {e}. Utilizing fallback contact engine.")
+                print(f"[Hunter.io API Warning] Call failed: {e}.")
 
-        # Fallback Engine returning realistic enriched contacts
-        return self._generate_fallback_contacts(company_name, domain)
+        # Strict Policy: Do not synthesize or invent fake contact names
+        return []
 
     def _extract_domain(self, company_name: str, apply_url: str) -> str:
         if apply_url and "http" in apply_url:
@@ -77,34 +80,3 @@ class HunterService:
 
         clean_name = company_name.lower().replace(" ", "").replace(",", "").replace(".", "")
         return f"{clean_name}.com"
-
-    def _generate_fallback_contacts(self, company_name: str, domain: str) -> List[Dict[str, Any]]:
-        clean_company = company_name.strip()
-        clean_domain = domain or f"{clean_company.lower().replace(' ', '')}.com"
-
-        return [
-            {
-                "name": f"Alex Rivera",
-                "title": f"Head of Engineering @ {clean_company}",
-                "email": f"arivera@{clean_domain}",
-                "confidence_score": 95,
-                "domain": clean_domain,
-                "source": "Hunter.io Verified (Enrichment Engine)"
-            },
-            {
-                "name": f"Sarah Chen",
-                "title": f"Senior Technical Recruiting Lead @ {clean_company}",
-                "email": f"sarah.chen@{clean_domain}",
-                "confidence_score": 92,
-                "domain": clean_domain,
-                "source": "Hunter.io Verified (Enrichment Engine)"
-            },
-            {
-                "name": f"David Vance",
-                "title": f"VP of Technology & Product @ {clean_company}",
-                "email": f"dvance@{clean_domain}",
-                "confidence_score": 88,
-                "domain": clean_domain,
-                "source": "Hunter.io Pattern Search"
-            }
-        ]

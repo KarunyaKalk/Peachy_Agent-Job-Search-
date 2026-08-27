@@ -14,6 +14,7 @@ import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ColdEmailPage } from './pages/ColdEmailPage';
 import { InterviewPrepPage } from './pages/InterviewPrepPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ResumeCheckerPage } from './pages/ResumeCheckerPage';
 
 export const App: React.FC = () => {
   return (
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
                 <Route path="/profile" element={<MasterProfilePage />} />
                 <Route path="/jobs" element={<JobFeedPage />} />
                 <Route path="/applications" element={<ApplicationsPage />} />
+                <Route path="/resume-checker" element={<ResumeCheckerPage />} />
                 <Route path="/cold-email" element={<ColdEmailPage />} />
                 <Route path="/interview-prep" element={<InterviewPrepPage />} />
                 <Route path="/settings" element={<SettingsPage />} />

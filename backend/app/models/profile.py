@@ -17,8 +17,9 @@ class MasterProfile(Base):
     github_url = Column(String, nullable=True)
     portfolio_url = Column(String, nullable=True)
     
-    # Summary
+    # Summary & Keyword Fingerprint
     summary = Column(Text, nullable=True)
+    keyword_fingerprint = Column(JSON, default=list)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

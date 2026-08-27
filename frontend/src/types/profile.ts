@@ -100,4 +100,5 @@ export interface MasterProfile {
   education: Education[];
   certifications: Certification[];
   preferences: JobPreferences;
+  keyword_fingerprint?: string[];
 }

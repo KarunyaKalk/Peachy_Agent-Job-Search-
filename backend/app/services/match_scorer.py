@@ -43,11 +43,14 @@ class MatchScorer:
         if not role_matched:
             score += 5.0
 
-        # 2. Skill Keyword Overlap Match (Up to +25 points)
-        profile_skills = [s.name.lower() for s in (profile.skills or []) if len(s.name) > 1]
-        if profile_skills:
-            matched_skills_count = sum(1 for skill in profile_skills if skill in jd_lower)
-            match_ratio = matched_skills_count / min(len(profile_skills), 10)
+        # 2. Skill & Extracted Fingerprint Keyword Overlap Match (Up to +25 points)
+        explicit_skills = [s.name.lower() for s in (profile.skills or []) if len(s.name) > 1]
+        fingerprint_skills = [fp.lower() for fp in (getattr(profile, 'keyword_fingerprint', []) or []) if len(fp) > 1]
+        all_profile_keywords = list(set(explicit_skills + fingerprint_skills))
+
+        if all_profile_keywords:
+            matched_skills_count = sum(1 for skill in all_profile_keywords if skill in jd_lower)
+            match_ratio = matched_skills_count / min(len(all_profile_keywords), 12)
             score += min(match_ratio * 25.0, 25.0)
         else:
             # Baseline if no skills added yet

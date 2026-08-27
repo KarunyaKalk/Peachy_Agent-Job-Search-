@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   Sparkles,
+  CheckSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     { name: 'Master Profile', path: '/profile', icon: UserCheck },
     { name: 'Job Feed', path: '/jobs', icon: Search, badge: 'AI Scanned' },
     { name: 'Applications', path: '/applications', icon: Briefcase },
+    { name: 'Resume Checker', path: '/resume-checker', icon: CheckSquare, badge: 'Instant' },
     { name: 'Cold Email', path: '/cold-email', icon: Mail },
     { name: 'Interview Prep', path: '/interview-prep', icon: GraduationCap },
     { name: 'Settings', path: '/settings', icon: Settings },

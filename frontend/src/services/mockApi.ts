@@ -1191,6 +1191,57 @@ github.com/KarunyaKalk | karunyakalk.dev`;
     } catch {}
     return newEntry;
   },
+
+  analyzeResumeMock: (data: any): any => {
+    const resumeText = data.resume_text || 'Senior Full Stack & AI Software Engineer proficient in Python, TypeScript, React, FastAPI, PostgreSQL, Docker, Redis, REST APIs, and system design.';
+    const jdText = data.jd_text || 'We are seeking a Senior Full Stack Engineer with expertise in Python, FastAPI, React, TypeScript, PostgreSQL, Docker, Kubernetes, CI/CD, and distributed systems.';
+
+    const matched = ['Python', 'TypeScript', 'React', 'FastAPI', 'PostgreSQL', 'Docker', 'Redis', 'REST APIs', 'System Design'];
+    const missing = ['Kubernetes', 'CI/CD Pipelines', 'Distributed Systems Scaling'];
+
+    return {
+      overall_ats_score: 92,
+      keyword_match_score: 90,
+      formatting_score: 95,
+      completeness_score: 92,
+      matched_keywords: matched,
+      missing_keywords: missing,
+      resume_keywords: {
+        technical_skills: ['Python', 'TypeScript', 'React', 'FastAPI', 'PostgreSQL', 'Redis'],
+        tools: ['Docker', 'Git', 'Postman'],
+        soft_skills: ['System Design', 'Technical Leadership', 'Problem Solving'],
+        certifications: ['AWS Certified Solutions Architect'],
+        role_titles: ['Senior Full Stack Engineer'],
+      },
+      jd_keywords: {
+        technical_skills: ['Python', 'TypeScript', 'React', 'FastAPI', 'PostgreSQL', 'Distributed Systems'],
+        tools: ['Docker', 'Kubernetes', 'CI/CD Pipelines'],
+        soft_skills: ['System Design', 'Cross-functional Leadership'],
+        certifications: [],
+        role_titles: ['Senior Full Stack Engineer'],
+      },
+      recommendations: [
+        'Incorporate missing keywords: Kubernetes, CI/CD Pipelines into your work experience bullets.',
+        'High overall ATS match score (92%)! Ensure experience accomplishments highlight quantitative metrics.',
+      ],
+      resume_preview_text: resumeText.slice(0, 250) + '...',
+      jd_preview_text: jdText.slice(0, 250) + '...',
+    };
+  },
+
+  saveFingerprintMock: (keywords: string[]): any => {
+    const profile = mockApiEngine.getProfile();
+    const currentFps = new Set(profile.keyword_fingerprint || []);
+    keywords.forEach((k) => currentFps.add(k));
+
+    profile.keyword_fingerprint = Array.from(currentFps);
+    mockApiEngine.updateProfile(profile);
+
+    return {
+      message: `Saved ${keywords.length} extracted keywords to Master Profile fingerprint.`,
+      keyword_fingerprint: profile.keyword_fingerprint,
+    };
+  },
 };
 
 
