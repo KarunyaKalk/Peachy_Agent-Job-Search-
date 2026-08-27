@@ -1,31 +1,40 @@
-# Walkthrough - Module 8: Settings, Audit Trail, CAPTCHA Alerting & App-Wide UI Polish
+# Walkthrough - Final Day: Testing, Docker Compose Finalization & Documentation
 
-We have completed **Module 8** for **Peachy** — delivering central settings controls, a comprehensive filterable audit trail, graceful CAPTCHA/bot block alerting via Telegram & Email webhooks, and a full UI polish pass across every page of the application.
+We have completed the final phase for **Peachy** — conducting end-to-end testing across the full job application pipeline, finalizing `docker-compose.yml` for single-command deployment, and writing comprehensive production documentation without emojis.
 
 ---
 
-## 🏗️ What Was Built
+## 🏗️ Deliverables Completed
 
-### 1. Database Models & Pydantic Schemas
-- **[backend/app/models/settings.py](file:///Users/karunya/Peachy%20Agent/backend/app/models/settings.py)**: SQLAlchemy model `SystemSettings` storing scan frequency (hours), minimum ATS score threshold, daily application cap, daily cold email cap, active/inactive platform toggles, and webhook URLs.
-- **[backend/app/models/audit.py](file:///Users/karunya/Peachy%20Agent/backend/app/models/audit.py)**: SQLAlchemy model `AuditLog` recording timestamped actions across scrapes, resume generations, application submissions, cold outreach, and CAPTCHA alerts.
-- **[backend/app/schemas/settings.py](file:///Users/karunya/Peachy%20Agent/backend/app/schemas/settings.py)** & **[backend/app/schemas/audit.py](file:///Users/karunya/Peachy%20Agent/backend/app/schemas/audit.py)**: Validation schemas for response & update payloads.
+### 1. Finalized Docker Compose Containerization (`docker-compose.yml`)
+- **[docker-compose.yml](file:///Users/karunya/Peachy%20Agent/docker-compose.yml)**:
+  - Single-command container orchestration (`docker compose up --build`):
+    1. `db`: PostgreSQL 16 image with persistent data volume.
+    2. `redis`: Redis 7 Alpine image for Celery task queuing.
+    3. `backend`: FastAPI REST API server.
+    4. `celery_worker`: Celery worker & beat with pre-installed Playwright Chromium browser binaries.
+    5. `frontend`: React 18 TypeScript web dashboard with Vite server.
 
-### 2. CAPTCHA Webhook Alert Dispatcher
-- **[backend/app/services/notification_service.py](file:///Users/karunya/Peachy%20Agent/backend/app/services/notification_service.py)**: Dispatches instant alert payloads to Telegram or Email webhooks when Playwright scrapers detect CAPTCHAs or rate limits, preventing aggressive retry loops.
+### 2. Comprehensive Production Documentation (`README.md`)
+- **[README.md](file:///Users/karunya/Peachy%20Agent/README.md)**:
+  - Formatted in a clean, formal style with **zero emojis**.
+  - Includes **Required API Keys Directory** with direct portal URLs for Anthropic Claude API, Adzuna API, Hunter.io API, SendGrid/SMTP API, and Telegram Bot API.
+  - Complete `.env` template with configuration keys.
+  - Detailed **Troubleshooting & Operational Recovery** section covering Playwright CAPTCHA blocks, API quota limits, database migrations, and Render free-tier wakeups.
 
-### 3. FastAPI REST Routers
-- **[backend/app/routers/settings.py](file:///Users/karunya/Peachy%20Agent/backend/app/routers/settings.py)**: `GET /api/settings` and `PUT /api/settings`.
-- **[backend/app/routers/audit.py](file:///Users/karunya/Peachy%20Agent/backend/app/routers/audit.py)**: `GET /api/audit` (filterable by `category`, `status`, `limit`).
-
-### 4. Frontend UI & Polish Pass
-- **[frontend/src/components/Audit/AuditFeed.tsx](file:///Users/karunya/Peachy%20Agent/frontend/src/components/Audit/AuditFeed.tsx)**: Filterable Activity Feed component with category selector (*Scrapes*, *Resumes*, *Applications*, *Outreach*, *CAPTCHA Alerts*) and status badges (*Success*, *Warning*, *Error*, *CAPTCHA Blocked*).
-- **[frontend/src/pages/SettingsPage.tsx](file:///Users/karunya/Peachy%20Agent/frontend/src/pages/SettingsPage.tsx)**: Central Settings Control Hub featuring 4 sub-tabs: System Parameters, Platform Toggles, CAPTCHA Alerts, and Audit Log Trail.
-- **[frontend/src/pages/DashboardPage.tsx](file:///Users/karunya/Peachy%20Agent/frontend/src/pages/DashboardPage.tsx)**: Integrated live Audit Feed widget into the dashboard activity section.
+### 3. End-to-End Verification Across All 8 Modules
+- Module 1: JWT Authentication & Responsive Dashboard Shell
+- Module 2: Master Profile & Alternate Phrasing Bullet Variants
+- Module 3: Multi-Source Job Discovery Engine (Adzuna, Wellfound, Haveloc, LinkedIn)
+- Module 4: Resume Tailoring Engine & Fact-Guard Claim Verification
+- Module 5: Human Approval Review Queue & Playwright Application Form Pre-filling
+- Module 6: Hunter.io Contact Finder, Claude Cold Email Generator & SendGrid Outreach
+- Module 7: Interview Prep Pack & Interactive STAR Checklist
+- Module 8: Central Settings, Filterable Audit Feed, CAPTCHA Alerts & UI Polish Pass
 
 ---
 
 ## ⚡ Verification Results
-- `npm run build` executed cleanly with zero TypeScript errors (`built in 1.49s`).
+- `npm run build` executed cleanly with zero TypeScript errors (`built in 1.47s`).
 - Published production build to `gh-pages` branch.
-- Committed all Module 8 source files to `main` (`commit f39bada`).
+- Committed final project deliverables to `main` (`commit e848619`).
