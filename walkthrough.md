@@ -1,40 +1,45 @@
-# Walkthrough - Final Day: Testing, Docker Compose Finalization & Documentation
+# Walkthrough - Cold Email Audit & Standalone Resume Keyword Extractor / ATS Checker
 
-We have completed the final phase for **Peachy** — conducting end-to-end testing across the full job application pipeline, finalizing `docker-compose.yml` for single-command deployment, and writing comprehensive production documentation without emojis.
+We have conducted the cold email audit, updated `HunterService` for strict contact verification, and built the standalone **Resume Keyword Extractor & Quick ATS Checker** feature.
 
 ---
 
-## 🏗️ Deliverables Completed
+## 🔍 Part 1: Cold Email Pipeline Audit Report
 
-### 1. Finalized Docker Compose Containerization (`docker-compose.yml`)
-- **[docker-compose.yml](file:///Users/karunya/Peachy%20Agent/docker-compose.yml)**:
-  - Single-command container orchestration (`docker compose up --build`):
-    1. `db`: PostgreSQL 16 image with persistent data volume.
-    2. `redis`: Redis 7 Alpine image for Celery task queuing.
-    3. `backend`: FastAPI REST API server.
-    4. `celery_worker`: Celery worker & beat with pre-installed Playwright Chromium browser binaries.
-    5. `frontend`: React 18 TypeScript web dashboard with Vite server.
+1. **SendGrid / SMTP API Wiring**:
+   - **Status**: The code in [backend/app/services/email_delivery_service.py](file:///Users/karunya/Peachy%20Agent/backend/app/services/email_delivery_service.py) is genuinely wired to SendGrid REST API (`https://api.sendgrid.com/v3/mail/send`) and Python `smtplib.SMTP` with TLS.
+   - **Live Email Status**: Outbound email sending is **currently operating in local development mode** because `SENDGRID_API_KEY` and `SENDER_EMAIL` are not yet configured in your environment variables.
+   - **Requirement for Live Dispatch**: To dispatch real cold emails to your inbox or hiring leads, add your `SENDGRID_API_KEY` and verified `SENDER_EMAIL` to your `.env` or Render environment variables.
 
-### 2. Comprehensive Production Documentation (`README.md`)
-- **[README.md](file:///Users/karunya/Peachy%20Agent/README.md)**:
-  - Formatted in a clean, formal style with **zero emojis**.
-  - Includes **Required API Keys Directory** with direct portal URLs for Anthropic Claude API, Adzuna API, Hunter.io API, SendGrid/SMTP API, and Telegram Bot API.
-  - Complete `.env` template with configuration keys.
-  - Detailed **Troubleshooting & Operational Recovery** section covering Playwright CAPTCHA blocks, API quota limits, database migrations, and Render free-tier wakeups.
+2. **Hunter.io Strict Contact Handling**:
+   - Updated [backend/app/services/hunter_service.py](file:///Users/karunya/Peachy%20Agent/backend/app/services/hunter_service.py) so that when Hunter.io returns zero verified contacts (or when running without an API key), it explicitly reports **"No verified contact found"** (returns an empty list) rather than inventing synthesized fallback names like `Alex Rivera`.
 
-### 3. End-to-End Verification Across All 8 Modules
-- Module 1: JWT Authentication & Responsive Dashboard Shell
-- Module 2: Master Profile & Alternate Phrasing Bullet Variants
-- Module 3: Multi-Source Job Discovery Engine (Adzuna, Wellfound, Haveloc, LinkedIn)
-- Module 4: Resume Tailoring Engine & Fact-Guard Claim Verification
-- Module 5: Human Approval Review Queue & Playwright Application Form Pre-filling
-- Module 6: Hunter.io Contact Finder, Claude Cold Email Generator & SendGrid Outreach
-- Module 7: Interview Prep Pack & Interactive STAR Checklist
-- Module 8: Central Settings, Filterable Audit Feed, CAPTCHA Alerts & UI Polish Pass
+---
+
+## 🛠️ Part 2: Standalone Resume Keyword Extractor & Quick ATS Checker
+
+### 1. New Navigation & Page
+- **[frontend/src/pages/ResumeCheckerPage.tsx](file:///Users/karunya/Peachy%20Agent/frontend/src/pages/ResumeCheckerPage.tsx)**: Standalone Resume Checker page accessible via the main sidebar navigation (`/resume-checker`).
+
+### 2. Standalone Inputs & Contextual Extraction
+- **Resume Input**: Upload resume file (PDF / DOCX text) or select from Master Profile / tailored resumes.
+- **JD Input**: Paste any raw job description text, input a URL, or select a job from the tracker.
+- **Standalone Execution**: Works standalone on any arbitrary resume + JD pair — zero dependency on pre-existing database records.
+- **Contextual LLM Extraction**: Uses Claude 3.5 Sonnet to contextually extract Technical Skills, Tools, Leadership / Soft Skills, Certifications, and Role Titles.
+
+### 3. Quick ATS Scoring & Two-Column Gap Analysis
+- Reuses `MatchScorerService` logic to calculate combined ATS Score (0-100), Keyword Match Score, Formatting Score, and Section Completeness.
+- **Two-Column View**:
+  - Left column: **Keywords Found in Both** (green badges).
+  - Right column: **In JD but Missing from Resume** (rose/amber badges).
+
+### 4. Master Profile Fingerprint & Handoff Actions
+- **"Save Fingerprint to Profile"**: Persists extracted keywords back to `MasterProfile.keyword_fingerprint` in PostgreSQL to enhance multi-source job match scoring in Module 3 discovery scans.
+- **"Tailor this Resume for this JD"**: One-click handoff button that navigates directly into the Module 4 tailoring flow.
 
 ---
 
 ## ⚡ Verification Results
-- `npm run build` executed cleanly with zero TypeScript errors (`built in 1.47s`).
+- `npm run build` executed cleanly with zero TypeScript errors (`built in 1.62s`).
 - Published production build to `gh-pages` branch.
-- Committed final project deliverables to `main` (`commit e848619`).
+- Committed all source files to `main` (`commit fd6d333`).
