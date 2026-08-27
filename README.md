@@ -149,14 +149,20 @@ Open http://localhost:5173 in your browser.
 
 ## Completed System Modules Summary
 
-- Module 1: Foundation, JWT Authentication, and Responsive Dashboard Shell
-- Module 2: Master Profile, Experience Bullets, and Alternate Phrasing Variants
+- **Module 1: Master Profile, Resume Upload Auto-Fill (PDF/DOCX), & Fact-Guard Review**
+  - Instant **Upload Resume to Auto-Fill** workflow accepting PDF and DOCX documents.
+  - Contextual Claude API extraction into Master Profile schema (Contact, Summary, Categorized Skills, Work Experience with bullets, Projects, Education, Certifications).
+  - Strict Fact-Guard principles preventing hallucinated claims and flagging ambiguous fields (date ranges, floating bullets, section assignment).
+  - Interactive side-by-side review UI (**Extracted Fields** vs. **Current Saved Fields**) with granular **Accept / Edit / Skip** choices per item.
+  - Intelligent DB merging for both empty and partially filled profiles.
+- Module 2: Experience Bullets & Alternate Phrasing Variants
 - Module 3: Multi-Source Job Aggregator Engine (Adzuna, Wellfound, Haveloc, LinkedIn)
 - Module 4: Resume Tailoring Engine & Fact-Guard Claim Audit Verification
 - Module 5: Human Approval Review Queue & Playwright Application Pre-filling
 - Module 6: Hunter.io Contact Finder, Claude Cold Email Generator & SendGrid Outreach
 - Module 7: Interview Prep Pack & Interactive STAR Answer Checklist
 - Module 8: Central Settings, Filterable Audit Log Feed, CAPTCHA Alerting & Polish Pass
+
 
 ---
 
@@ -168,15 +174,16 @@ Open http://localhost:5173 in your browser.
 │   ├── app/
 │   │   ├── core/           # Database setup, Security, System configuration
 │   │   ├── models/         # SQLAlchemy DB models (User, Profile, JobSeen, TailoredResume, Application, ColdEmail, PrepPack, Settings, AuditLog)
-│   │   ├── schemas/        # Pydantic schemas for data validation
-│   │   ├── services/       # Scrapers, MatchScorer, Claude Tailor, FactGuard, ContactFinder, InterviewPrep, NotificationService
+│   │   ├── schemas/        # Pydantic schemas (profile, profile_parser, job, tailoring, application, cold_email, user)
+│   │   ├── services/       # ResumeParserService (PDF/DOCX), Scrapers, MatchScorer, Claude Tailor, FactGuard, ContactFinder, InterviewPrep
 │   │   ├── routers/        # FastAPI REST endpoints (auth, profile, jobs, tailoring, applications, cold_email, interview_prep, settings, audit)
 │   │   └── main.py         # Application entrypoint & APScheduler initialization
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # Layout, Profile, Mascot, TailoredResumeModal, PrepPackModal, AuditFeed
+│   │   ├── components/     # Layout, Profile (ResumeUploadModal, ContactSummary, Experience, Skills, Projects, Education), Mascot, AuditFeed
+
 │   │   ├── context/        # AuthContext & PeachyEventContext
 │   │   ├── pages/          # Dashboard, Profile, Jobs, Review Queue, Applications, Tailored Resumes, Cold Email, Interview Prep, Settings
 │   │   ├── services/       # Axios API client & mockApi engine

@@ -10,9 +10,28 @@ import {
   Education,
   Certification,
   JobPreferences,
+  ResumeParseResponse,
+  ApplyParsedResumePayload,
 } from '../types/profile';
 
 export const profileService = {
+  // Resume upload & auto-fill parsing
+  uploadResume: async (file: File): Promise<ResumeParseResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<ResumeParseResponse>('/profile/upload-resume', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  applyParsedResume: async (payload: ApplyParsedResumePayload): Promise<MasterProfile> => {
+    const response = await api.post<MasterProfile>('/profile/apply-parsed-resume', payload);
+    return response.data;
+  },
+
   // Get full master profile
   getProfile: async (): Promise<MasterProfile> => {
     try {
@@ -22,6 +41,7 @@ export const profileService = {
       return mockApiEngine.getProfile();
     }
   },
+
 
   // Contact Info & Summary
   updateContactSummary: async (data: {

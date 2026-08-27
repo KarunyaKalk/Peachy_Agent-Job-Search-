@@ -9,6 +9,7 @@ import { SkillsSection } from '../components/Profile/SkillsSection';
 import { ProjectsSection } from '../components/Profile/ProjectsSection';
 import { EducationCertSection } from '../components/Profile/EducationCertSection';
 import { JobPreferencesSection } from '../components/Profile/JobPreferencesSection';
+import { ResumeUploadModal } from '../components/Profile/ResumeUploadModal';
 
 import {
   UserCheck,
@@ -18,13 +19,14 @@ import {
   GraduationCap,
   Target,
   Sparkles,
-  CheckCircle2,
+  Upload,
   AlertCircle,
 } from 'lucide-react';
 
 export const MasterProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<MasterProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'contact' | 'experience' | 'skills' | 'projects' | 'education' | 'preferences'
   >('contact');
@@ -124,8 +126,16 @@ export const MasterProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 text-xs">
-              <span className="px-3 py-1.5 rounded-full bg-peach-500/10 text-peach-400 border border-peach-500/20 font-medium flex items-center gap-1.5">
+            <div className="flex items-center space-x-3 text-xs">
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-peach-500 to-peach-600 hover:from-peach-400 hover:to-peach-500 text-white font-semibold shadow-lg shadow-peach-500/20 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Resume to Auto-Fill</span>
+              </button>
+
+              <span className="px-3 py-2 rounded-xl bg-peach-500/10 text-peach-400 border border-peach-500/20 font-medium flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Fact-Guard Active</span>
               </span>
@@ -180,6 +190,18 @@ export const MasterProfilePage: React.FC = () => {
               <JobPreferencesSection profile={profile} onUpdate={setProfile} />
             )}
           </div>
+
+          {/* Resume Upload Modal */}
+          {profile && (
+            <ResumeUploadModal
+              isOpen={isUploadModalOpen}
+              onClose={() => setIsUploadModalOpen(false)}
+              currentProfile={profile}
+              onSuccess={(updatedProfile) => {
+                setProfile(updatedProfile);
+              }}
+            />
+          )}
         </>
       )}
     </div>

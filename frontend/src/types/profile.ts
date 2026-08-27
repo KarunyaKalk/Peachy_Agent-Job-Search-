@@ -102,3 +102,49 @@ export interface MasterProfile {
   preferences: JobPreferences;
   keyword_fingerprint?: string[];
 }
+
+export interface AmbiguityFlag {
+  id: string;
+  section: string;
+
+  item_identifier?: string;
+  field: string;
+  reason: string;
+  suggested_action: string;
+}
+
+export interface ParsedContactSummary {
+  phone?: string;
+  location?: string;
+  linkedin_url?: string;
+  github_url?: string;
+  portfolio_url?: string;
+  summary?: string;
+}
+
+export interface ParsedResumeData {
+  contact: ParsedContactSummary;
+  summary?: string;
+  skills: Skill[];
+  experiences: WorkExperience[];
+  projects: Project[];
+  education: Education[];
+  certifications: Certification[];
+}
+
+export interface ResumeParseResponse {
+  extracted_data: ParsedResumeData;
+  current_profile: MasterProfile;
+  ambiguities: AmbiguityFlag[];
+  raw_text_snippet?: string;
+}
+
+export interface ApplyParsedResumePayload {
+  contact_summary?: ParsedContactSummary;
+  skills?: Skill[];
+  experiences?: WorkExperience[];
+  projects?: Project[];
+  education?: Education[];
+  certifications?: Certification[];
+}
+

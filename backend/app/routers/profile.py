@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Any
 
@@ -36,8 +36,15 @@ from app.schemas.profile import (
     JobPreferencesUpdate,
     JobPreferencesResponse,
 )
+from app.schemas.profile_parser import (
+    ResumeParseResponse,
+    ApplyParsedResumeRequest,
+)
+from app.services.resume_parser_service import ResumeParserService
 
 router = APIRouter(prefix="/profile", tags=["profile"])
+parser_service = ResumeParserService()
+
 
 
 def _get_or_create_profile(db: Session, user_id: int) -> MasterProfile:
@@ -398,3 +405,172 @@ def update_job_preferences(
     db.commit()
     db.refresh(prefs)
     return prefs
+
+
+# --- Resume Upload & Auto-Fill Endpoints ---
+@router.post("/upload-resume", response_model=ResumeParseResponse)
+async def upload_resume_and_extract(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """
+    Accepts PDF or DOCX file upload, extracts text, calls Claude API Fact-Guard
+    parsing, and returns extracted schema + ambiguities side-by-side with current profile.
+    """
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    try:
+        raw_text = parser_service.extract_text(contents, file.filename)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error extracting text from file: {str(e)}")
+
+    extracted_data, ambiguities = await parser_service.parse_resume_document(raw_text)
+    current_profile = _get_or_create_profile(db, current_user.id)
+
+    return ResumeParseResponse(
+        extracted_data=extracted_data,
+        current_profile=current_profile,
+        ambiguities=ambiguities,
+        raw_text_snippet=raw_text[:300] + "..." if len(raw_text) > 300 else raw_text,
+    )
+
+
+@router.post("/apply-parsed-resume", response_model=MasterProfileResponse)
+def apply_parsed_resume_data(
+    payload: ApplyParsedResumeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """
+    Applies user-reviewed and accepted resume fields into Master Profile DB.
+    Merges scalar fields and appends/updates list entities (skills, experience, projects, ed, certs).
+    """
+    profile = _get_or_create_profile(db, current_user.id)
+
+    # 1. Update Contact Summary if provided
+    if payload.contact_summary:
+        for field, val in payload.contact_summary.dict(exclude_unset=True).items():
+            if val is not None and str(val).strip() != "":
+                setattr(profile, field, val)
+
+    # 2. Add/Merge Skills
+    if payload.skills:
+        existing_skills = {(s.category.lower(), s.name.lower()): s for s in (profile.skills or [])}
+        for sk in payload.skills:
+            key = (sk.category.lower(), sk.name.lower())
+            if key not in existing_skills:
+                new_skill = Skill(
+                    profile_id=profile.id,
+                    category=sk.category or "General",
+                    name=sk.name,
+                    proficiency=sk.proficiency,
+                )
+                db.add(new_skill)
+
+    # 3. Add/Merge Work Experiences
+    if payload.experiences:
+        for exp in payload.experiences:
+            # Check if matching company and role already exists
+            existing_exp = db.query(WorkExperience).filter(
+                WorkExperience.profile_id == profile.id,
+                WorkExperience.company.ilike(exp.company),
+                WorkExperience.role.ilike(exp.role),
+            ).first()
+
+            if not existing_exp:
+                new_exp = WorkExperience(
+                    profile_id=profile.id,
+                    company=exp.company,
+                    role=exp.role,
+                    location=exp.location,
+                    start_date=exp.start_date,
+                    end_date=exp.end_date,
+                    is_current=exp.is_current,
+                    description=exp.description,
+                    display_order=exp.display_order,
+                )
+                db.add(new_exp)
+                db.commit()
+                db.refresh(new_exp)
+
+                if exp.bullets:
+                    for b in exp.bullets:
+                        new_bullet = ExperienceBullet(
+                            experience_id=new_exp.id,
+                            content=b.content,
+                            impact_category=b.impact_category,
+                            display_order=b.display_order,
+                        )
+                        db.add(new_bullet)
+            else:
+                # Merge new bullets into existing role if unique
+                existing_bullet_texts = {b.content.lower() for b in (existing_exp.bullets or [])}
+                if exp.bullets:
+                    for b in exp.bullets:
+                        if b.content.lower() not in existing_bullet_texts:
+                            new_bullet = ExperienceBullet(
+                                experience_id=existing_exp.id,
+                                content=b.content,
+                                impact_category=b.impact_category,
+                                display_order=b.display_order,
+                            )
+                            db.add(new_bullet)
+
+    # 4. Add/Merge Projects
+    if payload.projects:
+        existing_projects = {p.title.lower() for p in (profile.projects or [])}
+        for proj in payload.projects:
+            if proj.title.lower() not in existing_projects:
+                new_proj = Project(
+                    profile_id=profile.id,
+                    title=proj.title,
+                    description=proj.description,
+                    technologies=proj.technologies,
+                    project_url=proj.project_url,
+                    start_date=proj.start_date,
+                    end_date=proj.end_date,
+                )
+                db.add(new_proj)
+
+    # 5. Add/Merge Education
+    if payload.education:
+        existing_edu = {(e.institution.lower(), e.degree.lower()) for e in (profile.education or [])}
+        for edu in payload.education:
+            key = (edu.institution.lower(), edu.degree.lower())
+            if key not in existing_edu:
+                new_edu = Education(
+                    profile_id=profile.id,
+                    institution=edu.institution,
+                    degree=edu.degree,
+                    field_of_study=edu.field_of_study,
+                    start_date=edu.start_date,
+                    end_date=edu.end_date,
+                    gpa_or_honors=edu.gpa_or_honors,
+                )
+                db.add(new_edu)
+
+    # 6. Add/Merge Certifications
+    if payload.certifications:
+        existing_certs = {c.name.lower() for c in (profile.certifications or [])}
+        for cert in payload.certifications:
+            if cert.name.lower() not in existing_certs:
+                new_cert = Certification(
+                    profile_id=profile.id,
+                    name=cert.name,
+                    issuing_organization=cert.issuing_organization,
+                    issue_date=cert.issue_date,
+                    expiration_date=cert.expiration_date,
+                    credential_id=cert.credential_id,
+                    credential_url=cert.credential_url,
+                )
+                db.add(new_cert)
+
+    db.commit()
+    db.refresh(profile)
+    return profile
+
