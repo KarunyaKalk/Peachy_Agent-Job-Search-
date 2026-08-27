@@ -1,102 +1,152 @@
 # Peachy - AI Job Application Agent
 
-An autonomous, human-in-the-loop AI agent that discovers relevant job postings, tailors resumes per job description with zero hallucinations, scores ATS compatibility, pre-fills application forms with hard pause safeguards, tracks applications via a Kanban dashboard, enriches hiring contacts, and drafts personalized cold outreach emails.
+An autonomous, human-in-the-loop AI agent that discovers relevant job postings across multiple platforms, tailors resumes per job description with zero hallucinations, scores ATS compatibility, pre-fills application forms with safety pauses, dispatches personalized cold outreach, generates STAR interview prep packs, and logs a transparent audit trail.
 
 ---
 
-## Overview
+## Technical Overview and Architecture
 
-Peachy is a personal AI job-application assistant built for reliability, security, and real-world usability. Peachy operates under strict safety and compliance standards:
+Peachy is built for reliability, security, and real-world usability. The system strictly operates under human-in-the-loop safety standards:
 
-1. Human-in-the-Loop Approval: Every application submission flow hard-pauses before final submission for explicit user confirmation.
-2. Fact-Guard Verification Engine: Ensures zero invented skills, companies, dates, or credentials when tailoring resumes against your Master Profile.
-3. Multi-Source Job Aggregation: Combines official APIs (Adzuna) with rate-limited Playwright scrapers (Wellfound, Haveloc) and a compliant LinkedIn manual-assist single URL importer.
-4. ATS-Safe PDF Generation and Structured Editor: WeasyPrint and Jinja2 single-column ATS resume generator with version history and structured JSON editing.
-5. Legitimate Contact Enrichment and Outreach: Hunter.io domain contact discovery (no LinkedIn scraping), Claude AI personalized cold email drafting, SendGrid/SMTP delivery, daily capping (15/day), and CAN-SPAM opt-out line enforcement.
-6. Interactive Mascot Assistant: Peachy mascot acts as a persistent guide across every page, alerting users to job matches and application updates.
+1. Human Approval Guard: Submissions and form fills pause automatically before final dispatch for explicit user confirmation.
+2. Fact-Guard Verification Engine: Performs secondary diff verification ensuring zero invented skills, companies, dates, or credentials when tailoring resumes against your Master Profile.
+3. Multi-Source Aggregation: Combines official APIs (Adzuna) with rate-limited Playwright scrapers (Wellfound, Haveloc) and a compliant LinkedIn manual-assist single URL importer.
+4. Production Infrastructure: Orchestrated via Docker Compose (PostgreSQL 16, Redis 7, FastAPI, Celery worker with pre-installed Playwright Chromium binaries, and React Vite frontend).
 
 ---
 
-## Progress and Completed Modules
+## Directory of Required API Keys and Services
 
-### Build Pipeline Status
+To enable full production capabilities, obtain API keys from the following portals:
 
-- Module 1: Project Scaffolding, JWT Auth, and App Shell [Completed]
-- Module 2: Master Profile, Bullet Variants, and Job Preferences [Completed]
-- Module 3: Multi-Source Job Discovery Engine and Match Scoring [Completed]
-- Module 4: Resume Tailoring Engine and Fact-Guard Verification [Completed]
-- Module 5: WeasyPrint ATS PDF Generator and Structured In-App Editor [Completed]
-- Module 5: Application Review Queue, Playwright Pre-Fill with Hard Pause, and Kanban Dashboard [Completed]
-- Module 6: Hunter.io Contact Enrichment, Claude Cold Email Generator, SendGrid/SMTP Delivery, Daily Capping (15/day), and Outreach Log [Completed]
-- Mascot: Interactive Peachy Mascot Component and Global Event Bus [Completed]
-
----
-
-### Module Breakdown
-
-#### Module 1 - Foundation and Authentication
-- Full-Stack Architecture: Python FastAPI backend, React TypeScript Tailwind CSS frontend, Docker Compose orchestration.
-- Single-User JWT Authentication: Secure signup, login, and bearer token state management.
-- Modern Application Shell: Responsive sidebar navigation, agent status indicator, human approval guard badge, and theme tokens.
-
-#### Module 2 - Master Profile and Bullet Variants
-- Structured Resume Database: Single source of truth for contact details, summary, categorized skills, work history, projects, education, and certifications.
-- Bullet Variants Engine: Allows storing alternate phrasing variants for any work experience bullet point to highlight specific focus areas (Scale and Performance, Backend Emphasis, Leadership).
-- Job Search Preferences: Target role titles, seniority toggles, work mode selectors (Remote/Hybrid), salary floor input, and negative keyword auto-exclude filters.
-
-#### Module 3 - Multi-Source Job Discovery Engine
-- Adzuna REST API Integration: Sources structured postings with salary ranges, company names, and direct application links.
-- Wellfound Playwright Scraper: Rate-limited startup job scraper with randomized delays and User-Agent spoofing.
-- Haveloc Portal Scraper: Playwright scraper for institution/campus career portals using authenticated user sessions.
-- LinkedIn Manual-Assist Mode: Compliant single-URL paste importer that fetches and parses individual job descriptions without risking bot bans.
-- Match Scoring Engine: Calculates a 0-100 relevance score for every job based on title match, skill overlap, location, and salary floor.
-- APScheduler Worker: Runs automated background job discovery across all sources every 6 hours.
-
-#### Module 4 - Resume Tailoring Engine and Fact-Guard Audit
-- Claude API (Anthropic) Integration: Engineered prompts sending target job descriptions, Master Profile, and Bullet Variants to Claude 3.5 Sonnet to rephrase and reorder existing accomplishments without inventing facts.
-- Fact-Guard Diff Engine: Automated secondary verification pass comparing tailored output against Master Profile. Marks authentic claims as verified and flags unverified skills/claims as flagged with explanation text.
-- Structured Versioning: Stores structured tailored resume records linked to jobs with versioning (v1, v2) and approval status.
-- Tailored Resume UI Modal: Interactive viewport with step-by-step progress loading, Fact-Guard alert list, and diff preview.
-
-#### Module 5 - ATS PDF Generator, Review Queue, and Kanban Dashboard
-- ATS-Safe Jinja2 HTML/CSS Template: Standard fonts, single-column layout, semantic headings, no tables, text boxes, or images.
-- WeasyPrint PDF Rendering Engine: Generates downloadable ATS-safe PDF resumes directly from tailored JSON data.
-- Structured In-App Resume Editor: Enables reordering bullet points, modifying wording, and toggling sections prior to finalizing a version.
-- Version History Storage: Retains complete version history per job, re-downloadable and viewable anytime from job details.
-- Review Queue Page: Centralized queue displaying JD summary, match score, ATS breakdown, tailored preview, with Approve, Reject, and Edit actions.
-- Playwright Form Automation with Hard Pause: Automatically pre-fills application forms (Wellfound, Haveloc, LinkedIn Easy Apply) with applicant info and attached PDF resume, hard-pausing right before the submit button with a live screenshot preview for user confirmation.
-- 6-Column Kanban Dashboard: Tracks applications through Ready to Apply, Applied, Under Review, Interview, Offer, and Rejected stages.
-
-#### Module 6 - Cold Email Outreach Engine
-- Hunter.io Contact Enrichment: Queries company domain records to find hiring managers, recruiters, and engineering leads with verified email addresses and confidence scores (0-100%). Zero direct scraping of LinkedIn.
-- Claude AI Cold Email Generator: Generates personalized 3-paragraph outreach emails combining recipient contact info, target job requirements, and candidate accomplishments.
-- SendGrid / SMTP Delivery Integration: Dispatches approved emails from candidate's identity via SendGrid Web API or SMTP.
-- Daily Send Cap (15/day): Enforces a configurable daily send limit to maintain sender reputation and keep outreach personal.
-- CAN-SPAM Opt-Out Compliance: Automatically appends an unsubscribe footer line to every outbound cold email.
-- Outreach Audit Log: Tracks all sent emails in an `outreach` database table with recipient details, sent dates, and email body inspection.
-
-#### Interactive Peachy Mascot and Event Bus
-- Modular SVG Component: Custom vector illustration featuring a peach mascot with stem, glasses, blue tie, briefcase, and waving arm.
-- Multi-State Animation Engine: Idle bobbing, attention-seeking bounce and arm wave, speaking popovers, and contextual page nudges.
-- Global Event Bus: Decoupled pub/sub event context listening to real application events (Job Scan Discovered, Resume Tailored, Form Pre-Filled, Email Dispatched).
-
----
-
-## Tech Stack and Architecture
-
-| Layer | Technology | Usage |
+| Service / API | Portal URL | Usage in Peachy |
 | :--- | :--- | :--- |
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS | Responsive dashboard, mascot, editor, and cold email UI |
-| **Backend** | Python 3.11, FastAPI, Pydantic v2 | High-performance async REST API |
-| **Database** | PostgreSQL 16 (SQLite for local dev) | SQLAlchemy ORM with portable schemas |
-| **LLM Engine** | Anthropic Claude API (claude-3-5-sonnet) | Intelligent JD parsing, resume tailoring, and cold email generation |
-| **Contact Enrichment** | Hunter.io Domain Search API | Verified hiring manager email lookup with confidence scoring |
-| **PDF Generator** | WeasyPrint & Jinja2 HTML/CSS | ATS-safe single-column PDF resume rendering |
-| **Browser Automation** | Playwright Async Chromium | Rate-limited job scraping and pre-fill form automation with hard pause |
-| **Email Delivery** | SendGrid v3 API / SMTP | Cold outreach dispatch with daily capping (15/day) |
-| **Task Scheduler** | APScheduler | Background recurring multi-source job scans |
-| **Cloud Hosting** | Render (Backend API, Postgres, Celery Worker) | Always-on HTTPS production backend |
-| **Static Deployment** | GitHub Pages | Frontend static asset hosting |
+| **Anthropic Claude API** | https://console.anthropic.com/ | Intelligently rephrases work accomplishments and generates STAR interview prep packs |
+| **Adzuna Developer API** | https://developer.adzuna.com/ | Aggregates structured job postings with salary details and application links |
+| **Hunter.io API** | https://hunter.io/api | Enriches hiring manager and talent lead email addresses via domain search |
+| **SendGrid API / SMTP** | https://sendgrid.com/ | Dispatches personalized cold email outreach with CAN-SPAM opt-out lines |
+| **Telegram Bot API** | https://t.me/BotFather | Sends instant webhook notifications when scrapers encounter CAPTCHAs or rate limits |
+
+*Note: If any API keys are omitted or left blank, Peachy automatically operates in standalone mode using built-in deterministic fallback engines.*
+
+---
+
+## Environment Variables Configuration
+
+Create a `.env` file in the root directory using the template below:
+
+```ini
+# Core Backend Settings
+PROJECT_NAME="Peachy AI Job Agent"
+ENVIRONMENT="production"
+SECRET_KEY="replace_with_a_secure_random_32_character_string"
+
+# Database & Redis Credentials
+DATABASE_URL="postgresql://peachy:peachy_secure_password@db:5432/peachy_db"
+REDIS_URL="redis://redis:6379/0"
+
+# LLM & AI API Keys
+ANTHROPIC_API_KEY="sk-ant-api03-your-anthropic-api-key"
+LLM_MODEL="claude-3-5-sonnet-20241022"
+
+# Job Aggregator & Scraping Keys
+ADZUNA_APP_ID="your_adzuna_app_id"
+ADZUNA_APP_KEY="your_adzuna_app_key"
+
+# Contact Finder & Email Outreach Keys
+HUNTER_API_KEY="your_hunter_api_key"
+SENDGRID_API_KEY="SG.your_sendgrid_api_key"
+FROM_EMAIL="your_verified_sender@example.com"
+
+# CAPTCHA & Security Webhook Alerts
+TELEGRAM_WEBHOOK_URL="https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage?chat_id=<YOUR_CHAT_ID>"
+EMAIL_WEBHOOK_URL="https://hooks.zapier.com/hooks/catch/your_webhook_id"
+
+# CORS and Allowed Origins
+CORS_ORIGINS="https://karunyakalk.github.io,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+VITE_API_BASE_URL="http://localhost:8000"
+```
+
+---
+
+## Quickstart Deployment Guide
+
+### Option 1: One-Command Docker Deployment (Recommended)
+
+Run the single-command container stack via Docker Compose:
+
+```bash
+# Clone the repository
+git clone https://github.com/KarunyaKalk/Peachy_Agent-Job-Search-.git
+cd Peachy_Agent-Job-Search-
+
+# Launch all 5 container services (PostgreSQL, Redis, FastAPI, Celery Worker, React Vite)
+docker compose up --build -d
+
+# Verify container status
+docker compose ps
+```
+
+Access services locally:
+- Frontend Web Interface: http://localhost:5173
+- Backend REST API Specs: http://localhost:8000/api/docs
+- PostgreSQL Database: `localhost:5432`
+- Redis Task Queue: `localhost:6379`
+
+To stop containers:
+```bash
+docker compose down
+```
+
+---
+
+### Option 2: Manual Local Setup (Development Mode)
+
+#### 1. Backend Setup
+
+```bash
+cd backend
+
+# Create Python virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install Python requirements
+pip install -r requirements.txt
+
+# Install Playwright Chromium browser binaries
+playwright install --with-deps chromium
+
+# Start FastAPI server
+uvicorn app.main:app --reload --port 8000
+```
+
+#### 2. Frontend Setup
+
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start Vite local dev server
+npm run dev
+```
+
+Open http://localhost:5173 in your browser.
+
+---
+
+## Completed System Modules Summary
+
+- Module 1: Foundation, JWT Authentication, and Responsive Dashboard Shell
+- Module 2: Master Profile, Experience Bullets, and Alternate Phrasing Variants
+- Module 3: Multi-Source Job Aggregator Engine (Adzuna, Wellfound, Haveloc, LinkedIn)
+- Module 4: Resume Tailoring Engine & Fact-Guard Claim Audit Verification
+- Module 5: Human Approval Review Queue & Playwright Application Pre-filling
+- Module 6: Hunter.io Contact Finder, Claude Cold Email Generator & SendGrid Outreach
+- Module 7: Interview Prep Pack & Interactive STAR Answer Checklist
+- Module 8: Central Settings, Filterable Audit Log Feed, CAPTCHA Alerting & Polish Pass
 
 ---
 
@@ -106,38 +156,53 @@ Peachy is a personal AI job-application assistant built for reliability, securit
 .
 ├── backend/
 │   ├── app/
-│   │   ├── core/           # Config, Security, Database setup
-│   │   ├── models/         # SQLAlchemy DB models (User, Profile, JobSeen, TailoredResume, Application, ColdEmailDraft, Outreach)
-│   │   ├── schemas/        # Pydantic validation schemas
-│   │   ├── services/       # Adzuna, Wellfound, Haveloc, LinkedIn, MatchScorer, Claude, FactGuard, PDF, Submission, Hunter, ColdEmail, EmailDelivery
-│   │   ├── templates/      # Jinja2 ATS-safe HTML/CSS resume template
-│   │   ├── routers/        # FastAPI REST endpoints (auth, profile, jobs, tailoring, applications, cold_email)
-│   │   └── main.py         # FastAPI entrypoint and scheduler initialization
+│   │   ├── core/           # Database setup, Security, System configuration
+│   │   ├── models/         # SQLAlchemy DB models (User, Profile, JobSeen, TailoredResume, Application, ColdEmail, PrepPack, Settings, AuditLog)
+│   │   ├── schemas/        # Pydantic schemas for data validation
+│   │   ├── services/       # Scrapers, MatchScorer, Claude Tailor, FactGuard, ContactFinder, InterviewPrep, NotificationService
+│   │   ├── routers/        # FastAPI REST endpoints (auth, profile, jobs, tailoring, applications, cold_email, interview_prep, settings, audit)
+│   │   └── main.py         # Application entrypoint & APScheduler initialization
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # Layout, Profile, Applications, Outreach, Mascot, TailoredResumeModal
-│   │   ├── context/        # AuthContext and PeachyEventContext
-│   │   ├── pages/          # Dashboard, Master Profile, Job Feed, Applications, Cold Email Hub, Settings
-│   │   ├── services/       # Axios API client, mock engine, applications, outreach services
-│   │   └── types/          # TypeScript interfaces (job, profile, tailoring, application, outreach)
+│   │   ├── components/     # Layout, Profile, Mascot, TailoredResumeModal, PrepPackModal, AuditFeed
+│   │   ├── context/        # AuthContext & PeachyEventContext
+│   │   ├── pages/          # Dashboard, Profile, Jobs, Review Queue, Applications, Tailored Resumes, Cold Email, Interview Prep, Settings
+│   │   ├── services/       # Axios API client & mockApi engine
+│   │   └── types/          # TypeScript interfaces
 │   ├── Dockerfile
 │   ├── package.json
 │   └── vite.config.ts
 ├── .github/workflows/
 │   └── deploy.yml          # GitHub Actions deployment to GitHub Pages
-├── render.yaml              # Render Infrastructure-as-Code blueprint
-├── docker-compose.yml
+├── render.yaml              # Render Cloud Infrastructure IaC blueprint
+├── docker-compose.yml       # Production 5-container orchestration
 └── README.md
 ```
 
 ---
 
+## Troubleshooting & Operational Recovery
+
+### 1. Playwright CAPTCHA / Bot Block Warnings
+- Behavior: Scraper logs `status="captcha_blocked"` in audit trail and pauses.
+- Resolution: Peachy intentionally avoids aggressive retries to protect IP reputation. Configure `TELEGRAM_WEBHOOK_URL` in Settings to receive instant notifications when bot detection is encountered.
+
+### 2. API Quota Limits
+- Behavior: Anthropic or Hunter.io API returns 429 status codes.
+- Resolution: Peachy automatically switches to built-in deterministic fallback engines so user workflows remain functional without throwing application crashes.
+
+### 3. Render Database Connections & Free-Tier Wakeups
+- Behavior: Deployed backend takes 30-60 seconds on initial cold request.
+- Resolution: Render free-tier web services sleep after 15 minutes of inactivity. The standalone client engine (`mockApi.ts`) guarantees GitHub Pages visitors can test all features immediately while the hosted backend wakes up.
+
+---
+
 ## Live Deployment Links
 
-- Frontend Site: https://KarunyaKalk.github.io/Peachy_Agent-Job-Search-
-- Backend API Documentation: https://peachy-backend-api.onrender.com/api/docs
+- Deployed GitHub Pages App: https://KarunyaKalk.github.io/Peachy_Agent-Job-Search-
+- Hosted REST API Documentation: https://peachy-backend-api.onrender.com/api/docs
 - Source Code Repository: https://github.com/KarunyaKalk/Peachy_Agent-Job-Search-
 
 ---

@@ -39,7 +39,26 @@ services:
       - SECRET_KEY=${SECRET_KEY:-peachy_super_secret_jwt_key_2026_change_in_prod}
       - ENVIRONMENT=development
       - FRONTEND_URL=http://localhost:5173
-      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000,https://karunyakalk.github.io
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: peachy-celery-worker
+    command: celery -A app.services.scheduler worker -B --loglevel=info
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-peachy}:${POSTGRES_PASSWORD:-peachy_secure_password}@db:5432/${POSTGRES_DB:-peachy_db}
       - REDIS_URL=redis://redis:6379/0
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     depends_on:
