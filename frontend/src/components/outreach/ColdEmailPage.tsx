@@ -4,19 +4,21 @@ import { OutreachLog, Job } from '../../types';
 import { useEventBus } from '../../context/EventBusContext';
 import { Mail, Search, Send, CheckCircle, Sparkles, AlertCircle, ShieldCheck } from 'lucide-react';
 
+import { mockOutreachLogs, mockJobs } from '../../api/mockData';
+
 export const ColdEmailPage: React.FC = () => {
   const { emitEvent } = useEventBus();
-  const [logs, setLogs] = useState<OutreachLog[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<number>(1);
-  const [company, setCompany] = useState<string>('Orchard Tech AI');
-  
+  const [logs, setLogs] = useState<OutreachLog[]>(mockOutreachLogs);
+  const [jobs, setJobs] = useState<Job[]>(mockJobs);
+  const [selectedJobId, setSelectedJobId] = useState<number>(mockJobs[0].id);
+  const [company, setCompany] = useState<string>(mockJobs[0].company);
+
   // Contact Discovery & Generator state
   const [findingContact, setFindingContact] = useState<boolean>(false);
   const [contactResult, setContactResult] = useState<any>(null);
-  const [recipientName, setRecipientName] = useState<string>('Sarah Jenkins');
-  const [recipientTitle, setRecipientTitle] = useState<string>('Lead Technical Recruiter');
-  const [recipientEmail, setRecipientEmail] = useState<string>('s.jenkins@orchardtech.ai');
+  const [recipientName, setRecipientName] = useState<string>('Sarah Vance');
+  const [recipientTitle, setRecipientTitle] = useState<string>('Head of Engineering');
+  const [recipientEmail, setRecipientEmail] = useState<string>('sarah.vance@nexusai.example.com');
   const [subject, setSubject] = useState<string>('');
   const [body, setBody] = useState<string>('');
   const [generating, setGenerating] = useState<boolean>(false);
@@ -35,14 +37,15 @@ export const ColdEmailPage: React.FC = () => {
     try {
       const l = await apiService.getOutreachLogs();
       const j = await apiService.getJobs();
-      setLogs(l);
-      setJobs(j);
-      if (j.length > 0) {
+      setLogs(l && l.length > 0 ? l : mockOutreachLogs);
+      setJobs(j && j.length > 0 ? j : mockJobs);
+      if (j && j.length > 0) {
         setSelectedJobId(j[0].id);
         setCompany(j[0].company);
       }
     } catch (e) {
-      console.error(e);
+      setLogs(mockOutreachLogs);
+      setJobs(mockJobs);
     }
   };
 

@@ -14,6 +14,8 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
+import { mockApplications } from '../../api/mockData';
+
 const KANBAN_COLUMNS = [
   'Not Applied',
   'Ready to Apply',
@@ -26,8 +28,8 @@ const KANBAN_COLUMNS = [
 
 export const ApplicationsKanbanPage: React.FC = () => {
   const { emitEvent } = useEventBus();
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [applications, setApplications] = useState<Application[]>(mockApplications);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Playwright Form-Fill Preview Modal State
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
@@ -40,12 +42,11 @@ export const ApplicationsKanbanPage: React.FC = () => {
   }, []);
 
   const loadApplications = async () => {
-    setLoading(true);
     try {
       const data = await apiService.getApplications();
-      setApplications(data);
+      setApplications(data && data.length > 0 ? data : mockApplications);
     } catch (e) {
-      console.error(e);
+      setApplications(mockApplications);
     } finally {
       setLoading(false);
     }

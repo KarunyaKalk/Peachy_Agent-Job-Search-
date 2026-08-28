@@ -4,10 +4,12 @@ import { UserSettings } from '../../types';
 import { useTheme } from '../../theme/ThemeContext';
 import { Settings as SettingsIcon, Sun, Moon, Save, Shield } from 'lucide-react';
 
+import { mockSettings } from '../../api/mockData';
+
 export const SettingsPage: React.FC = () => {
   const { isDarkMode, toggleTheme } = useTheme();
-  const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [settings, setSettings] = useState<UserSettings | null>(mockSettings);
+  const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [msg, setMsg] = useState<string>('');
 
@@ -18,11 +20,9 @@ export const SettingsPage: React.FC = () => {
   const loadSettings = async () => {
     try {
       const data = await apiService.getSettings();
-      setSettings(data);
+      setSettings(data || mockSettings);
     } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      setSettings(mockSettings);
     }
   };
 

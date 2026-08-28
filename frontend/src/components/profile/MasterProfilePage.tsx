@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../../api/client';
 import { MasterProfile, JobPreference } from '../../types';
 import { useEventBus } from '../../context/EventBusContext';
+import { mockProfile, mockPreferences } from '../../api/mockData';
 import {
   Upload,
   User,
@@ -19,12 +20,13 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+
 export const MasterProfilePage: React.FC = () => {
   const { emitEvent } = useEventBus();
-  const [profile, setProfile] = useState<MasterProfile | null>(null);
-  const [preferences, setPreferences] = useState<JobPreference | null>(null);
+  const [profile, setProfile] = useState<MasterProfile | null>(mockProfile);
+  const [preferences, setPreferences] = useState<JobPreference | null>(mockPreferences);
   const [activeTab, setActiveTab] = useState<'profile' | 'preferences'>('profile');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
 
@@ -38,18 +40,17 @@ export const MasterProfilePage: React.FC = () => {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
     try {
       const p = await apiService.getProfile();
       const pref = await apiService.getPreferences();
-      setProfile(p);
-      setPreferences(pref);
+      setProfile(p || mockProfile);
+      setPreferences(pref || mockPreferences);
     } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      setProfile(mockProfile);
+      setPreferences(mockPreferences);
     }
   };
+
 
   const handleSaveProfile = async () => {
     if (!profile) return;

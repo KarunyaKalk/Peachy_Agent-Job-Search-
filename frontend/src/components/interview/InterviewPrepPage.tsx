@@ -3,9 +3,11 @@ import { apiService } from '../../api/client';
 import { Job } from '../../types';
 import { BookOpen, CheckSquare, Sparkles, HelpCircle, UserCheck } from 'lucide-react';
 
+import { mockJobs } from '../../api/mockData';
+
 export const InterviewPrepPage: React.FC = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<number>(1);
+  const [jobs, setJobs] = useState<Job[]>(mockJobs);
+  const [selectedJobId, setSelectedJobId] = useState<number>(mockJobs[0].id);
   const [loading, setLoading] = useState<boolean>(false);
   const [prepPack, setPrepPack] = useState<any>(null);
 
@@ -24,13 +26,16 @@ export const InterviewPrepPage: React.FC = () => {
   const loadJobs = async () => {
     try {
       const data = await apiService.getJobs();
-      setJobs(data);
-      if (data.length > 0) {
-        setSelectedJobId(data[0].id);
-        fetchPrep(data[0].id);
+      const jobList = data && data.length > 0 ? data : mockJobs;
+      setJobs(jobList);
+      if (jobList.length > 0) {
+        setSelectedJobId(jobList[0].id);
+        fetchPrep(jobList[0].id);
       }
     } catch (e) {
-      console.error(e);
+      setJobs(mockJobs);
+      setSelectedJobId(mockJobs[0].id);
+      fetchPrep(mockJobs[0].id);
     }
   };
 

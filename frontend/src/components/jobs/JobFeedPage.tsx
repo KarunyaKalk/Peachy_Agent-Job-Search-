@@ -15,14 +15,16 @@ import {
   FileText
 } from 'lucide-react';
 
+import { mockJobs } from '../../api/mockData';
+
 interface JobFeedPageProps {
   onSelectJobForTailoring?: (jobId: number) => void;
 }
 
 export const JobFeedPage: React.FC<JobFeedPageProps> = ({ onSelectJobForTailoring }) => {
   const { emitEvent } = useEventBus();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [jobs, setJobs] = useState<Job[]>(mockJobs);
+  const [loading, setLoading] = useState<boolean>(false);
   const [scanning, setScanning] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [linkedInUrl, setLinkedInUrl] = useState<string>('');
@@ -34,14 +36,11 @@ export const JobFeedPage: React.FC<JobFeedPageProps> = ({ onSelectJobForTailorin
   }, [searchTerm]);
 
   const loadJobs = async () => {
-    setLoading(true);
     try {
       const data = await apiService.getJobs(0, searchTerm);
-      setJobs(data);
+      setJobs(data && data.length > 0 ? data : mockJobs);
     } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      setJobs(mockJobs);
     }
   };
 

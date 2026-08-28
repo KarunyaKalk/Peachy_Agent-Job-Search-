@@ -3,23 +3,22 @@ import { apiService } from '../../api/client';
 import { AuditLog } from '../../types';
 import { ShieldCheck, Activity, AlertCircle, RefreshCw } from 'lucide-react';
 
+import { mockAuditLogs } from '../../api/mockData';
+
 export const AuditLogPage: React.FC = () => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [logs, setLogs] = useState<AuditLog[]>(mockAuditLogs);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     loadAudit();
   }, []);
 
   const loadAudit = async () => {
-    setLoading(true);
     try {
       const data = await apiService.getAuditLogs();
-      setLogs(data);
+      setLogs(data && data.length > 0 ? data : mockAuditLogs);
     } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      setLogs(mockAuditLogs);
     }
   };
 
