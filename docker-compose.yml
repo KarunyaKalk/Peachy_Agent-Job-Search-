@@ -1,28 +1,26 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: peachy-db
-    restart: always
+  postgres:
+    image: postgres:15-alpine
+    container_name: peachy_postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-peachy}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-peachy_secure_password}
-      POSTGRES_DB: ${POSTGRES_DB:-peachy_db}
+      POSTGRES_DB: peachy_db
+      POSTGRES_USER: peachy_user
+      POSTGRES_PASSWORD: peachy_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U peachy -d peachy_db"]
+      test: ["CMD-SHELL", "pg_isready -U peachy_user -d peachy_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: peachy-redis
-    restart: always
+    container_name: peachy_redis
     ports:
       - "6379:6379"
 
@@ -30,20 +28,19 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: peachy-backend
-    restart: always
+    container_name: peachy_backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-peachy}:${POSTGRES_PASSWORD:-peachy_secure_password}@db:5432/${POSTGRES_DB:-peachy_db}
-      - SECRET_KEY=${SECRET_KEY:-peachy_super_secret_jwt_key_2026_change_in_prod}
-      - ENVIRONMENT=development
-      - FRONTEND_URL=http://localhost:5173
-      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000,https://karunyakalk.github.io
+      - DATABASE_URL=postgresql+asyncpg://peachy_user:peachy_password@postgres:5432/peachy_db
       - REDIS_URL=redis://redis:6379/0
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - HUNTER_API_KEY=${HUNTER_API_KEY}
+      - APOLLO_API_KEY=${APOLLO_API_KEY}
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_started
@@ -54,36 +51,40 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: peachy-celery-worker
-    command: celery -A app.services.scheduler worker -B --loglevel=info
-    restart: always
+    container_name: peachy_celery_worker
+    command: celery -A backend.celery_app.worker.celery_app worker --loglevel=info
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-peachy}:${POSTGRES_PASSWORD:-peachy_secure_password}@db:5432/${POSTGRES_DB:-peachy_db}
+      - DATABASE_URL=postgresql+asyncpg://peachy_user:peachy_password@postgres:5432/peachy_db
       - REDIS_URL=redis://redis:6379/0
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ./backend:/app
+      - backend
+      - redis
+
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: peachy_celery_beat
+    command: celery -A backend.celery_app.worker.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://peachy_user:peachy_password@postgres:5432/peachy_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: peachy-frontend
-    restart: always
+    container_name: peachy_frontend
     ports:
       - "5173:5173"
     environment:
       - VITE_API_BASE_URL=http://localhost:8000
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
 
 volumes:
   postgres_data:

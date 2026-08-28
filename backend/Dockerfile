@@ -1,33 +1,30 @@
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    DEBIAN_FRONTEND=noninteractive
-
-WORKDIR /app
-
-# Install system build dependencies and libraries for PostgreSQL and Playwright
+# System dependencies for WeasyPrint, Playwright, and PDF processing
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     git \
+    libglib2.0-0 \
+    libpango-1.0-0 \
+    harfbuzz-bin \
+    libpangoft2-1.0-0 \
+    libjpeg-dev \
+    libopenjp2-7-dev \
+    ffi-dev \
     libpq-dev \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt-get/lists/*
 
-# Install Python requirements
-COPY requirements.txt .
+WORKDIR /app
+
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# CRITICAL: Install Playwright Chromium browser binaries & OS dependencies for scrapers
+# CRITICAL: Install Playwright chromium browser binaries with system dependencies
 RUN playwright install --with-deps chromium
 
-# Copy backend application source code
-COPY . .
+COPY . /app/
 
-# Expose FastAPI web service port
-EXPOSE 10000
+EXPOSE 8000
 
-# Default command launches FastAPI via uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -4,102 +4,29 @@
 
 @layer base {
   body {
-    @apply bg-dark-bg text-slate-100 antialiased selection:bg-peach-500 selection:text-white;
+    @apply bg-cream-50 text-slate-800 dark:bg-espresso-900 dark:text-slate-100 min-h-screen selection:bg-peach-200 dark:selection:bg-peach-900;
   }
 }
 
-/* Custom Glassmorphism Cards */
-.glass-panel {
-  @apply bg-dark-card/90 backdrop-blur-md border border-dark-border rounded-xl shadow-xl;
-}
-
-.glass-card-hover {
-  @apply transition-all duration-300 hover:border-peach-500/50 hover:shadow-glow-peach;
-}
-
-/* Custom Scrollbar */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0d14;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e2638;
-  border-radius: 9999px;
+  @apply bg-slate-300 dark:bg-espresso-800 rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff7043;
+  @apply bg-peach-400;
 }
 
-/* Pulse animation for AI status indicators */
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 0.8;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
+.peachy-card {
+  @apply bg-white dark:bg-espresso-800 border border-cream-200 dark:border-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200;
 }
 
-.pulse-glow {
-  animation: pulseGlow 2.5s infinite ease-in-out;
-}
-
-/* Peachy Mascot Keyframe Animations */
-@keyframes peachyBob {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-7px);
-  }
-}
-
-@keyframes peachyWave {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(26deg);
-  }
-}
-
-@keyframes peachyBounce {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-  }
-  30% {
-    transform: translateY(-10px) scale(1.08) rotate(-4deg);
-  }
-  60% {
-    transform: translateY(-4px) scale(1.04) rotate(4deg);
-  }
-}
-
-.peachy-bob {
-  animation: peachyBob 3.2s ease-in-out infinite;
-}
-
-.peachy-wave {
-  transform-origin: 85% 65%;
-  animation: peachyWave 1.4s ease-in-out infinite;
-}
-
-.peachy-bounce {
-  animation: peachyBounce 1.6s infinite ease-in-out;
-}
-
-/* Accessibility: Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .peachy-bob,
-  .peachy-wave,
-  .peachy-bounce,
-  .pulse-glow {
-    animation: none !important;
-    transform: none !important;
-  }
+.peachy-pill {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-mono;
 }
