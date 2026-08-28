@@ -10,6 +10,7 @@ import {
   UserSettings,
   ATSCheckResult
 } from '../types';
+import { parseResumeAutoFillClientSide, parseStandaloneCheckerClientSide } from './clientParser';
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -28,11 +29,16 @@ export const apiService = {
   getProfile: async (): Promise<MasterProfile> => (await api.get('/api/profile')).data,
   updateProfile: async (data: Partial<MasterProfile>): Promise<MasterProfile> => (await api.put('/api/profile', data)).data,
   uploadResumeAutoFill: async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return (await api.post('/api/profile/autofill', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })).data;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      return (await api.post('/api/profile/autofill', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })).data;
+    } catch (err) {
+      console.warn("Backend API unavailable. Performing zero-latency client-side resume extraction fallback.");
+      return await parseResumeAutoFillClientSide(file);
+    }
   },
   getPreferences: async (): Promise<JobPreference> => (await api.get('/api/profile/preferences')).data,
   updatePreferences: async (data: Partial<JobPreference>): Promise<JobPreference> => (await api.put('/api/profile/preferences', data)).data,
@@ -46,16 +52,22 @@ export const apiService = {
   // Resumes & ATS Checker
   tailorResume: async (jobId: number, instructions = ''): Promise<TailoredResume> => (await api.post('/api/resumes/tailor', { job_id: jobId, custom_instructions: instructions })).data,
   runStandaloneChecker: async (file?: File, jdText?: string, trackedJobId?: number): Promise<ATSCheckResult> => {
-    const formData = new FormData();
-    if (file) formData.append('file', file);
-    if (jdText) formData.append('jd_text', jdText);
-    if (trackedJobId) formData.append('tracked_job_id', String(trackedJobId));
-    
-    return (await api.post('/api/resumes/standalone-checker', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })).data;
+    try {
+      const formData = new FormData();
+      if (file) formData.append('file', file);
+      if (jdText) formData.append('jd_text', jdText);
+      if (trackedJobId) formData.append('tracked_job_id', String(trackedJobId));
+      
+      return (await api.post('/api/resumes/standalone-checker', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })).data;
+    } catch (err) {
+      console.warn("Backend API unavailable. Performing client-side ATS check fallback.");
+      return await parseStandaloneCheckerClientSide(file, jdText);
+    }
   },
   getPdfUrl: (resumeId: number) => `${API_BASE_URL}/api/resumes/${resumeId}/pdf`,
+
 
   // Applications Kanban
   getApplications: async (): Promise<Application[]> => (await api.get('/api/applications')).data,
