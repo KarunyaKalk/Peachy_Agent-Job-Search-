@@ -11,7 +11,6 @@ import {
   AmbiguityFlag,
 } from '../types/profile';
 
-// Disable worker CORS requirement by setting workerSrc to empty string or cdnjs
 try {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 } catch (e) {
@@ -46,31 +45,39 @@ export async function extractTextFromClientFile(file: File): Promise<string> {
 
   if (ext === 'pdf') {
     try {
-      const loadingTask = pdfjsLib.getDocument({
-        data: new Uint8Array(buffer),
-        useSystemFonts: true,
-        disableFontFace: true,
-        verbosity: 0,
-      });
-      const pdf = await loadingTask.promise;
-      const pageTexts: string[] = [];
+      // Race PDFjs promise against 800ms timeout so Safari never hangs
+      const pdfText = await Promise.race([
+        (async () => {
+          const loadingTask = pdfjsLib.getDocument({
+            data: new Uint8Array(buffer),
+            useSystemFonts: true,
+            disableFontFace: true,
+            verbosity: 0,
+          });
+          const pdf = await loadingTask.promise;
+          const pageTexts: string[] = [];
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageItems = textContent.items.map((item: any) => item.str);
-        pageTexts.push(pageItems.join(' '));
-      }
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageItems = textContent.items.map((item: any) => item.str);
+            pageTexts.push(pageItems.join(' '));
+          }
+          return pageTexts.join('\n\n').trim();
+        })(),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error('PDFjs worker timeout')), 800)
+        ),
+      ]);
 
-      const combinedText = pageTexts.join('\n\n').trim();
-      if (combinedText && combinedText.length > 5) {
-        return combinedText;
+      if (pdfText && pdfText.length > 5) {
+        return pdfText;
       }
     } catch (e) {
-      console.warn('PDFjs parsing failed, using fallback stream extractor:', e);
+      console.warn('PDFjs worker parsing timed out or failed, using fast text stream extractor:', e);
     }
 
-    // Fallback PDF text stream decoder
+    // Fast PDF text stream decoder fallback
     const decoder = new TextDecoder('latin1');
     const rawStr = decoder.decode(buffer);
     const textSegments: string[] = [];
@@ -170,7 +177,6 @@ export function parseRawResumeText(rawText: string, currentProfile: MasterProfil
 
   const extractedSkillsMap = new Map<string, { category: string; name: string }>();
 
-  // Check text for known skills
   Object.entries(knownSkillTaxonomy).forEach(([term, cat]) => {
     const regex = new RegExp(`\\b${term.replace('.', '\\.')}\\b`, 'i');
     if (regex.test(rawText)) {
@@ -179,7 +185,6 @@ export function parseRawResumeText(rawText: string, currentProfile: MasterProfil
     }
   });
 
-  // Check lines in Skills section
   const skillsHeaderIdx = lines.findIndex((l) => /skills|technologies|expertise/i.test(l));
   if (skillsHeaderIdx !== -1) {
     const skillLines = lines.slice(skillsHeaderIdx + 1, skillsHeaderIdx + 8);
@@ -204,7 +209,6 @@ export function parseRawResumeText(rawText: string, currentProfile: MasterProfil
     proficiency: 'Proficient',
   }));
 
-  // Default fallback skills if map empty
   if (skills.length === 0) {
     skills.push(
       { name: 'Python', category: 'Backend', proficiency: 'Expert' },
@@ -260,12 +264,10 @@ export function parseRawResumeText(rawText: string, currentProfile: MasterProfil
     });
   }
 
-  // Fallback experience if none extracted
   if (experiences.length === 0 && currentProfile.experiences && currentProfile.experiences.length > 0) {
     experiences.push(...currentProfile.experiences);
   }
 
-  // Ambiguity check
   experiences.forEach((exp) => {
     if (!exp.start_date || exp.start_date === '2021') {
       ambiguities.push({
