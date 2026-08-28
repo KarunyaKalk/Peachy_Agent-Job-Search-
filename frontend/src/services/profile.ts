@@ -24,13 +24,14 @@ export const profileService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 1500,
       });
       return response.data;
     } catch {
       return await mockApiEngine.uploadResume(file);
     }
-
   },
+
 
   applyParsedResume: async (payload: ApplyParsedResumePayload): Promise<MasterProfile> => {
     try {

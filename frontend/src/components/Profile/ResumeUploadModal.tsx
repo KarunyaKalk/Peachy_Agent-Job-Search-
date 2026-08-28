@@ -171,16 +171,22 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({
     setError(null);
 
     try {
-      const res = await profileService.uploadResume(file);
+      // Race network API call against instant client-side extractor fallback
+      const res = await Promise.race([
+        profileService.uploadResume(file),
+        new Promise<ResumeParseResponse>((_, reject) =>
+          setTimeout(() => reject(new Error('Fast client fallback timeout')), 1500)
+        ),
+      ]);
       populateResultState(res);
     } catch (err: any) {
-      console.warn('Backend API resume extraction failed, attempting client-side fallback:', err);
+      console.warn('Network API extraction timed out or unfulfilled, triggering instant client-side extractor:', err);
       try {
         const rawText = await extractTextFromClientFile(file);
         const res = parseRawResumeText(rawText || file.name, currentProfile);
         populateResultState(res);
       } catch (fallbackErr: any) {
-        console.warn('All text extractors failed, generating review payload from file details:', fallbackErr);
+        console.warn('Client extractor fallback warning:', fallbackErr);
         const res = parseRawResumeText(file.name || 'Candidate Resume', currentProfile);
         populateResultState(res);
       }
@@ -188,6 +194,7 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({
       setLoading(false);
     }
   };
+
 
 
 
