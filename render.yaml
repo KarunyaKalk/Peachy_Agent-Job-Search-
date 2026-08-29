@@ -4,7 +4,7 @@ services:
     name: peachy-backend-api
     env: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     plan: free
     region: oregon
     envVars:
@@ -29,7 +29,7 @@ services:
     name: peachy-celery-worker
     env: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     dockerCommand: celery -A backend.celery_app.worker worker --loglevel=info
     plan: starter
     region: oregon
